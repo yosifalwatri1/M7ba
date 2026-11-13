@@ -40,6 +40,11 @@
             <p class="suggest-cap" id="suggest-cap">هل تقصد؟</p>
             <ul class="suggest" id="suggest" aria-labelledby="suggest-cap"></ul>
           </div>
+          <div class="field">
+            <label for="reason">لماذا اخترته؟ <span class="opt">(اختياري)</span></label>
+            <textarea class="textarea" id="reason" name="reason" maxlength="300" rows="3" aria-describedby="reason-hint"></textarea>
+            <p class="hint" id="reason-hint"><span>عبّر بكلماتك: ماذا يميّزه؟ ماذا تعلّمت منه؟</span> <span class="num" id="reason-count">0/300</span></p>
+          </div>
           <button class="btn btn-primary btn-block" id="send" type="submit">أرسل ترشيحي</button>
         </form>
       </section>
@@ -88,6 +93,7 @@
 
     <footer class="ballot-foot">
       <p class="meta">صوت واحد لكل طالب · لا يُسجَّل اسمك مع الترشيح</p>
+      <p><a class="link" href="/about">ما هذه المبادرة؟</a></p>
     </footer>
   </div>
   <canvas id="fx" aria-hidden="true"></canvas>

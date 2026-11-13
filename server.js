@@ -114,7 +114,7 @@ const routes = {
     const name = String(body.name || '').trim();
     const teacherId = Number(body.teacherId) || null;
     if (!teacherId && name.replace(/\s/g, '').length < 2) throw fail(400, 'اكتب اسم المعلّم أولاً.');
-    const result = store.castVote({ raw: name, teacherId, device, force: !!body.force });
+    const result = store.castVote({ raw: name, teacherId, device, force: !!body.force, reason: body.reason });
     if (result.status !== 'choose') setCookie(req, res, 'vid', device, 400 * 24 * 3600);
     return result;
   },
@@ -179,6 +179,11 @@ const adminRoutes = {
     store.detachVariant(Number(teacherId), String(norm));
     return { ok: true };
   },
+  'POST /api/admin/reasons/delete': async (req) => {
+    const { id } = await readBody(req);
+    store.clearReason(Number(id));
+    return { ok: true };
+  },
   'POST /api/admin/settings': async (req) => {
     const b = await readBody(req);
     if (typeof b.school === 'string') store.setSetting('school', b.school.trim().slice(0, 80));
@@ -216,9 +221,9 @@ const adminRoutes = {
     const label = { matched: 'محسوب', pending: 'بانتظار المراجعة', discarded: 'مستبعد' };
     const how = { picked: 'اختاره الطالب من القائمة', auto: 'مطابقة تلقائية', alias: 'قرار سابق للمدير', admin: 'ربطه المدير', none: '' };
     const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-    const lines = [['الرقم', 'الاسم كما كُتب', 'المعلّم', 'الحالة', 'طريقة الربط', 'الوقت'].map(esc).join(',')];
+    const lines = [['الرقم', 'الاسم كما كُتب', 'المعلّم', 'الحالة', 'طريقة الربط', 'لماذا اختاره', 'الوقت'].map(esc).join(',')];
     for (const r of store.exportRows()) {
-      lines.push([r.id, r.raw, r.teacher || '', label[r.status], how[r.method], new Date(r.created).toISOString()].map(esc).join(','));
+      lines.push([r.id, r.raw, r.teacher || '', label[r.status], how[r.method], r.reason, new Date(r.created).toISOString()].map(esc).join(','));
     }
     res.writeHead(200, {
       'Content-Type': 'text/csv; charset=utf-8',
@@ -234,6 +239,7 @@ function serveStatic(req, res, pathname) {
   let rel = pathname;
   if (rel === '/') rel = '/index.html';
   if (rel === '/admin' || rel === '/admin/') rel = '/admin.html';
+  if (rel === '/about' || rel === '/about/') rel = '/about.html';
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
   if (!file.startsWith(PUBLIC_DIR + path.sep)) { res.writeHead(403); res.end(); return; }
   fs.readFile(file, (err, data) => {

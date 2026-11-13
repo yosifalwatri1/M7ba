@@ -166,6 +166,11 @@
     if (!changed('results', results)) return;
     const box = $('results'), leader = $('leader');
     const open = new Set([...box.querySelectorAll('details[open]')].map((d) => d.dataset.id));
+      const said = (r) => r.reasons.length > 0 && el('details', { class: 'variants said', 'data-id': 'r' + r.id, open: open.has('r' + r.id) },
+        el('summary', {}, icon('heart'), ` كلمات الطلاب عنه (${r.reasons.length})`),
+        el('ul', {}, r.reasons.map((q) => el('li', {},
+          el('q', {}, q.text),
+          el('button', { class: 'link link-ink', onclick: () => dropReason(r, q) }, 'احذف التعليق')))));
 
     if (!totals.teachers) {
       leader.replaceChildren();
@@ -212,7 +217,8 @@
           el('summary', {}, r.variants.length === 1 ? 'كُتب اسمه بصيغة مختلفة' : r.variants.length === 2 ? 'كُتب اسمه بصيغتين' : `كُتب اسمه بـ ${r.variants.length} صيغ`),
           el('ul', {}, r.variants.map((v) => el('li', {},
             el('span', {}, `${v.raw} `, el('span', { class: 'meta num' }, `×${v.count}`)),
-            el('button', { class: 'link link-ink', onclick: () => detach(r, v) }, 'ليست له'))))));
+            el('button', { class: 'link link-ink', onclick: () => detach(r, v) }, 'ليست له'))))),
+        said(r));
     }));
     box.replaceChildren(head, list);
     if (first) {   // أول عرض: الصفوف تدخل والأشرطة تمتلئ
@@ -318,6 +324,11 @@
     ask({ title: `فصل «${v.raw}» عن ${t.name}؟`, ok: 'افصلها وأعدها للمراجعة',
       body: `${votesWord(v.count)} ستخرج من رصيده وتنتقل إلى تبويب المراجعة لتقرّر لمن هي.`,
       run: act('/api/admin/variants/detach', { teacherId: t.id, norm: v.norm }, 'أُعيدت إلى المراجعة') });
+  }
+  function dropReason(t, q) {
+    ask({ title: 'حذف هذا التعليق؟', ok: 'احذف التعليق', danger: true,
+      body: `«${q.text}» — سيُحذف التعليق فقط، والصوت يبقى محسوباً لـ ${t.name}.`,
+      run: act('/api/admin/reasons/delete', { id: q.id }, 'حُذف التعليق') });
   }
   function discard(g, norms) {
     ask({ title: `استبعاد «${g.label}»؟`, ok: `استبعد ${votesWord(g.count)}`, danger: true,

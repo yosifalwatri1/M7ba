@@ -80,6 +80,7 @@
     busy = true;
     sendBtn.disabled = true;
     try {
+      payload.reason = $('reason').value.trim();
       const r = await api('/api/vote', payload);
       if (r.status === 'choose') {
         $('typed').textContent = payload.name;
@@ -120,6 +121,8 @@
     }
     submit(picked ? { name, teacherId: picked.id } : { name }, nameError);
   });
+
+  $('reason').addEventListener('input', () => { $('reason-count').textContent = $('reason').value.length + '/300'; });
 
   $('none').addEventListener('click', () => submit({ name: $('typed').textContent, force: true }, $('choose-error')));
   $('back').addEventListener('click', () => { show('form'); input.focus(); });

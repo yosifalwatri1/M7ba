@@ -114,6 +114,10 @@ a { color: var(--red); text-underline-offset: 3px; }
 .input:focus-visible, .select:focus-visible, .textarea:focus-visible {
   outline: 3px solid var(--sun); outline-offset: 0; border-color: var(--red);
 }
+.opt { font-weight: 400; color: var(--ink-3); }
+.field .hint:has(.num) { display: flex; justify-content: space-between; gap: 1rem; }
+.ballot .textarea { min-height: 5.5rem; border-radius: 14px; resize: none; }
+.ballot-foot p + p { margin-top: 0.25rem; }
 .error { color: var(--danger); font-size: var(--t-sec); font-weight: 500; }
 
 /* ============================================================
@@ -190,6 +194,33 @@ body.vote {
   .m { animation: none; transform: rotate(var(--tilt, 0deg)); }
   * { transition-duration: 0ms !important; }
 }
+
+/* ============================================================
+   صفحة «عن المبادرة»
+   ============================================================ */
+.about { max-width: 44rem; margin: 0 auto; padding: 1rem 1.25rem 3rem; }
+.about-hero { text-align: center; padding: 1.5rem 0 2rem; }
+.about-hero h1 { font-size: clamp(1.85rem, 7vw, 2.6rem); line-height: 1.5; margin-bottom: 0.75rem; }
+.about-hero p { color: var(--ink-2); font-size: var(--t-h3); line-height: 1.7; max-width: 36rem; margin: 0 auto; }
+.about section { margin-top: 2.5rem; }
+.about h2 { font-family: var(--display); font-size: var(--t-h2); line-height: 1.5; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.625rem; }
+.about h2 .ic { width: 2.5rem; height: 2.5rem; padding: 0.4rem; border-radius: 12px; background: var(--sun); border: 2px solid var(--ink); }
+.about section > p { color: var(--ink-2); max-width: 40rem; }
+.about section > p + p { margin-top: 0.75rem; }
+.points { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 2px solid var(--ink); border-radius: 16px; overflow: hidden; }
+.points li { display: grid; grid-template-columns: auto 1fr; gap: 0.125rem 0.875rem; padding: 1rem 1.125rem; }
+.points li + li { border-top: 1px solid var(--rule); }
+.points .ic { grid-row: 1 / 3; width: 2rem; height: 2rem; color: var(--red); margin-top: 0.125rem; }
+.points strong { font-weight: 600; }
+.points span { color: var(--ink-2); font-size: var(--t-sec); line-height: 1.6; }
+.trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.trio > div { background: var(--surface); border: 1px solid var(--rule); border-radius: 16px; padding: 1.125rem; }
+.trio h3 { font-size: var(--t-h3); margin-bottom: 0.375rem; display: flex; align-items: center; gap: 0.5rem; }
+.trio h3 .ic { width: 1.75rem; height: 1.75rem; color: var(--red); }
+.trio p { color: var(--ink-2); font-size: var(--t-sec); line-height: 1.6; }
+.about-cta { margin-top: 2.5rem; padding: 1.5rem; text-align: center; background: var(--sun-soft); border: 2px solid var(--ink); border-radius: 20px; display: grid; gap: 1rem; justify-items: center; }
+.about-cta p { font-family: var(--display); font-weight: 600; font-size: var(--t-h3); line-height: 1.6; }
+@media (max-width: 640px) { .trio { grid-template-columns: 1fr; } }
 
 /* ============================================================
    لوحة التحكّم (المدير)
@@ -269,6 +300,12 @@ details.variants summary { font-size: var(--t-meta); color: var(--ink-3); cursor
 details.variants ul { list-style: none; margin: 0.5rem 0 0.25rem; padding: 0; display: grid; gap: 0.125rem; max-width: 30rem; }
 details.variants li { display: flex; justify-content: space-between; align-items: center; gap: 1rem; font-size: var(--t-sec); }
 details.variants li + li { border-top: 1px dashed var(--rule); }
+
+details.said summary { color: var(--red-deep); font-weight: 500; font-size: var(--t-sec); }
+details.said summary .ic { color: var(--red); }
+details.said ul { gap: 0; max-width: 40rem; }
+details.said li { padding: 0.375rem 0; align-items: baseline; }
+details.said q { quotes: "«" "»"; color: var(--ink); font-size: var(--t-body); overflow-wrap: anywhere; }
 
 /* المراجعة */
 .review > li { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 22rem); gap: 1rem 2rem; align-items: start; padding: 1.25rem; }
