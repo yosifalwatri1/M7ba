@@ -3,23 +3,30 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f3eee3">
+  <meta name="theme-color" content="#fff8e8">
   <meta name="robots" content="noindex">
   <title>رشّح معلّمك المفضّل</title>
-  <link rel="preload" href="/fonts/aref-ruqaa-arabic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="/fonts/noto-kufi-arabic-arabic-600-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/app.css">
 </head>
-<body>
+<body class="vote">
   <div class="ballot">
     <header class="ballot-head">
-      <span class="school" id="school">استفتاء المدرسة</span>
-      <span class="meta">ورقة ترشيح</span>
+      <span class="school"><svg class="ic" aria-hidden="true"><use href="/icons.svg#graduation-cap"/></svg><span id="school">استفتاء المدرسة</span></span>
+      <span class="meta">صوتك يفرق</span>
     </header>
 
     <main class="ballot-main" id="main" aria-live="polite">
       <!-- النموذج -->
       <section id="view-form" hidden>
-        <h1 class="display ballot-title" id="title">من هو معلّمك المفضّل؟</h1>
+        <div class="mascots" aria-hidden="true">
+          <svg class="ic m m1" aria-hidden="true"><use href="/icons.svg#backpack"/></svg>
+          <svg class="ic m m2" aria-hidden="true"><use href="/icons.svg#books"/></svg>
+          <span class="badge" id="hero-badge"><svg class="ic" aria-hidden="true"><use href="/icons.svg#student"/></svg></span>
+          <svg class="ic m m3" aria-hidden="true"><use href="/icons.svg#pencil"/></svg>
+          <svg class="ic m m4" aria-hidden="true"><use href="/icons.svg#star"/></svg>
+        </div>
+        <h1 class="display ballot-title"><span class="hl" id="title">من هو معلّمك المفضّل؟</span></h1>
         <p class="ballot-lede">اكتب اسم المعلّم الذي تراه الأفضل. يكفي الاسم الأول واسم العائلة.</p>
         <form id="form" novalidate>
           <div class="field">
@@ -39,6 +46,7 @@
 
       <!-- الاسم يحتمل أكثر من معلّم -->
       <section id="view-choose" hidden>
+        <span class="badge sm" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="/icons.svg#magnifying-glass"/></svg></span>
         <h1 class="display ballot-title">أيّ معلّم تقصد؟</h1>
         <p class="ballot-lede">الاسم الذي كتبته «<span id="typed"></span>» قريب من أكثر من معلّم. اختر واحداً ليُحسب صوتك له.</p>
         <div class="stack">
@@ -51,24 +59,27 @@
 
       <!-- النتيجة -->
       <section id="view-done" class="verdict" hidden>
-        <div class="seal" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <h1 class="display">وصل ترشيحك</h1>
+        <span class="badge sm" id="done-badge" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="/icons.svg#hands-clapping"/></svg></span>
+        <h1 class="display"><span class="hl">وصل ترشيحك!</span></h1>
         <p id="done-line">سُجّل صوتك لـ</p>
         <p class="who" id="done-who"></p>
         <p>شكراً لمشاركتك. يمكنك إغلاق الصفحة الآن.</p>
       </section>
 
       <section id="view-already" class="verdict" hidden>
+        <span class="badge sm" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="/icons.svg#seal-check"/></svg></span>
         <h1 class="display">سبق أن رشّحت</h1>
         <p>سُجّل ترشيحك من هذا الجهاز من قبل. لكل طالب صوت واحد.</p>
       </section>
 
       <section id="view-closed" class="verdict" hidden>
+        <span class="badge sm calm" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="/icons.svg#hourglass"/></svg></span>
         <h1 class="display">التصويت مغلق</h1>
         <p>انتهت فترة الترشيح. شكراً لكل من شارك.</p>
       </section>
 
       <section id="view-error" class="verdict" hidden>
+        <span class="badge sm calm" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="/icons.svg#warning"/></svg></span>
         <h1 class="display">تعذّر الاتصال</h1>
         <p>لم نستطع فتح صفحة الترشيح. تأكّد من اتصالك بالإنترنت ثم حاول مجدداً.</p>
         <p style="margin-top:1.25rem"><button class="btn" type="button" onclick="location.reload()">حاول مجدداً</button></p>
@@ -79,6 +90,10 @@
       <p class="meta">صوت واحد لكل طالب · لا يُسجَّل اسمك مع الترشيح</p>
     </footer>
   </div>
+  <canvas id="fx" aria-hidden="true"></canvas>
+  <script src="/vendor/motion.js" defer></script>
+  <script src="/vendor/confetti.js" defer></script>
+  <script src="/js/fx.js" defer></script>
   <script src="/js/vote.js" defer></script>
 </body>
 </html>

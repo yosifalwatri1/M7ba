@@ -4,7 +4,7 @@
   const views = ['form', 'choose', 'done', 'already', 'closed', 'error'];
   const show = (name) => {
     for (const v of views) $('view-' + v).hidden = v !== name;
-    $('view-' + name).classList.add('rise');
+    FX.enter($('view-' + name));
   };
 
   const input = $('name'), form = $('form'), sendBtn = $('send');
@@ -32,7 +32,9 @@
     const b = document.createElement('button');
     b.type = 'button';
     b.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+    b.insertAdjacentHTML('afterbegin', '<svg class="ic" aria-hidden="true"><use href="/icons.svg#chalkboard-teacher"/></svg>');
     const n = document.createElement('span');
+    n.className = 'nm';
     n.textContent = item.name;
     const p = document.createElement('span');
     p.className = 'pick';
@@ -45,12 +47,16 @@
 
   function renderSuggest(items) {
     const list = $('suggest');
+    const key = items.map((i) => i.id).join(',');
+    const fresh = key !== list.dataset.key;
+    list.dataset.key = key;
     list.replaceChildren(...items.map((it) => optionButton(it, (item) => {
       picked = picked && picked.id === item.id ? null : item;
       if (picked) input.value = item.name;
       renderSuggest(items);
     }, picked && picked.id === it.id)));
     $('suggest-wrap').hidden = !items.length;
+    if (fresh && items.length) FX.list(list.children);
   }
 
   let timer;
@@ -81,6 +87,7 @@
           optionButton(c, (item) => submit({ name: payload.name, teacherId: item.id }, $('choose-error')))));
         setError($('choose-error'), '');
         show('choose');
+        FX.list($('choices').children);
         return;
       }
       try { localStorage.setItem('voted', '1'); } catch {}
@@ -92,6 +99,7 @@
         $('done-who').textContent = payload.name;
       }
       show('done');
+      FX.celebrate($('done-badge'));
     } catch (err) {
       if (err.status === 409) { show('already'); return; }
       if (err.status === 403) { show('closed'); return; }
@@ -124,6 +132,7 @@
       if (s.voted) return show('already');
       if (!s.open) return show('closed');
       show('form');
+      FX.pop($('hero-badge'));
     } catch {
       show('error');
     }

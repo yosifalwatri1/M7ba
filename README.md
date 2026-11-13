@@ -51,3 +51,12 @@ docker run -p 3000:3000 -v teacher-vote-data:/data teacher-vote
 ## حدود معروفة
 
 - صوت واحد لكل جهاز (عبر ملف تعريف الارتباط). طالب يمسح بيانات متصفحه أو يستخدم جهازاً آخر يستطيع التصويت مجدداً؛ المنع التام يتطلّب رقماً خاصاً لكل طالب.
+
+## مكتبات الواجهة (مضمّنة في `public/`، لا تحتاج إنترنت خارجي)
+
+- الأيقونات: [Phosphor Icons](https://github.com/phosphor-icons/core) (نمط duotone) — MIT، مجمّعة في `public/icons.svg`.
+- التحريكات: [Motion](https://github.com/motiondivision/motion) — MIT.
+- قصاصات الاحتفال: [canvas-confetti](https://github.com/catdad/canvas-confetti) — ISC.
+- الخطوط: Noto Kufi Arabic للعناوين و IBM Plex Sans Arabic للنصوص — رخصة OFL.
+
+من فضّل «تقليل الحركة» في إعدادات جهازه تظهر له الصفحة بلا تحريكات.

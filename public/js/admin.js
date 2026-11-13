@@ -12,6 +12,13 @@
     for (const kid of kids.flat()) if (kid != null && kid !== false) n.append(kid);
     return n;
   };
+  const icon = (name) => {
+    const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('class', 'ic'); s.setAttribute('aria-hidden', 'true');
+    const u = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    u.setAttribute('href', '/icons.svg#' + name); s.append(u);
+    return s;
+  };
   const votesWord = (n) => (n === 1 ? 'صوت واحد' : n === 2 ? 'صوتان' : n >= 3 && n <= 10 ? `${n} أصوات` : `${n} صوتاً`);
 
   async function api(path, body) {
@@ -73,6 +80,7 @@
     $('app').hidden = true; $('gate').hidden = false;
     gateMode = login ? 'login' : 'setup';
     $('gate-title').textContent = login ? 'لوحة النتائج' : 'إعداد اللوحة';
+    FX.enter($('gate-form'));
     $('gate-lede').textContent = login ? 'أدخل كلمة مرور المدير لعرض النتائج.'
       : 'هذه أول مرة تُفتح فيها اللوحة. اختر كلمة مرور للمدير (6 أحرف على الأقل) واحتفظ بها.';
     $('gate-label').textContent = login ? 'كلمة المرور' : 'كلمة مرور جديدة';
@@ -93,12 +101,15 @@
 
   // ---------- التبويبات ----------
   const tabs = ['results', 'review', 'teachers', 'qr', 'settings'];
+  let shown = null;
   function selectTab(name) {
     for (const t of tabs) {
       $('t-' + t).setAttribute('aria-selected', String(t === name));
       $('t-' + t).tabIndex = t === name ? 0 : -1;
       $('tab-' + t).hidden = t !== name;
     }
+    if (FX.on && shown !== name) Motion.animate($('tab-' + name), { opacity: [0, 1], y: [8, 0] }, { duration: 0.28 });
+    shown = name;
     if (name === 'qr' && data) renderPoster();
     try { sessionStorage.setItem('tab', name); } catch {}
   }
@@ -122,8 +133,8 @@
   };
   const busyIn = (node) => node.contains(document.activeElement) || dlg.open;
 
-  function emptyState(title, text, action) {
-    return el('div', { class: 'empty' }, el('h3', {}, title), el('p', {}, text), action);
+  function emptyState(title, text, action, ico) {
+    return el('div', { class: 'empty' }, icon(ico || 'notebook'), el('h3', {}, title), el('p', {}, text), action);
   }
 
   function renderResults() {
@@ -137,13 +148,19 @@
     rc.textContent = totals.pending; rc.hidden = !totals.pending;
 
     if (changed('figures', totals)) {
-      const fig = (label, value, alert) => el('div', { class: 'figure' + (alert ? ' alert' : '') },
-        el('dt', {}, label), el('dd', { class: 'num' }, String(value)));
-      $('figures').replaceChildren(
-        fig('إجمالي المشاركات', totals.all),
-        fig('أصوات محسوبة', totals.counted),
-        fig('بانتظار المراجعة', totals.pending, totals.pending > 0),
-        fig('معلّمون في القائمة', totals.teachers));
+      const box = $('figures');
+      const defs = [['all', 'إجمالي المشاركات', 'users-three'], ['counted', 'أصوات محسوبة', 'check-circle'],
+        ['pending', 'بانتظار المراجعة', 'magnifying-glass'], ['teachers', 'معلّمون في القائمة', 'chalkboard-teacher']];
+      if (!box.children.length) {
+        box.replaceChildren(...defs.map(([k, label, ico]) => el('div', { class: 'figure', 'data-k': k },
+          icon(ico), el('dt', {}, label), el('dd', { class: 'num' }, '0'))));
+        if (FX.on) Motion.animate([...box.children], { opacity: [0, 1], y: [12, 0] }, { delay: Motion.stagger(0.06), duration: 0.4 });
+      }
+      for (const [k] of defs) {
+        const node = box.querySelector(`[data-k="${k}"]`);
+        node.classList.toggle('alert', k === 'pending' && totals.pending > 0);
+        FX.count(node.querySelector('dd'), totals[k], (v) => String(Math.round(v)));
+      }
     }
 
     if (!changed('results', results)) return;
@@ -154,30 +171,41 @@
       leader.replaceChildren();
       box.replaceChildren(emptyState('ابدأ بقائمة المعلّمين',
         'أضف أسماء معلّمي المدرسة ليتعرّف النظام على ما يكتبه الطلاب ويحسب كل صوت لصاحبه.',
-        el('button', { class: 'btn btn-primary', onclick: () => selectTab('teachers') }, 'أضف المعلّمين')));
+        el('button', { class: 'btn btn-primary', onclick: () => selectTab('teachers') }, 'أضف المعلّمين'), 'chalkboard-teacher'));
       return;
     }
     if (!totals.counted) {
       leader.replaceChildren();
     } else {
       const tops = results.filter((r) => r.rank === 1);
-      leader.replaceChildren(el('div', { class: 'leader' },
+      const leadKey = tops.map((t) => t.id).join(',');
+      const cup = el('span', { class: 'cup' }, icon(tops.length > 1 ? 'medal' : 'trophy'));
+      const pctNode = el('span', { class: 'num' }, tops[0].pct + '%');
+      const block = el('div', { class: 'leader' }, cup,
         el('p', { class: 'kicker' }, tops.length > 1 ? 'تعادل في الصدارة' : 'المتصدّر الآن'),
         el('p', { class: 'display name' }, tops.map((t) => t.name).join(' و ')),
-        el('p', { class: 'pct' }, el('span', { class: 'num' }, tops[0].pct + '%'),
-          el('small', {}, votesWord(tops[0].votes) + (tops.length > 1 ? ' لكلٍّ منهما' : '')))));
+        el('p', { class: 'pct' }, pctNode,
+          el('small', {}, votesWord(tops[0].votes) + (tops.length > 1 ? ' لكلٍّ منهم' : ''))));
+      leader.replaceChildren(block);
+      if (leader.dataset.key !== leadKey) {   // متصدّر جديد: احتفل
+        leader.dataset.key = leadKey;
+        FX.pop(cup);
+        if (FX.on) Motion.animate(block, { opacity: [0, 1], y: [10, 0] }, { duration: 0.4 });
+      }
     }
 
     const max = Math.max(1, ...results.map((r) => r.votes));
+    const first = !box.querySelector('.ledger');
     const head = el('div', { class: 'ledger-head' }, el('div', { class: 'row' },
       el('span', {}, '#'), el('span', {}, 'المعلّم'), el('span', {}, ''), el('span', {}, 'الأصوات'), el('span', {}, 'النسبة')));
     const list = el('ol', { class: 'ledger' }, results.map((r) => {
       const variants = r.variants.length > 1 || (r.variants[0] && r.variants[0].raw !== r.name);
       return el('li', { class: r.rank === 1 && r.votes ? 'is-first' : '' },
         el('div', { class: 'row' },
-          el('span', { class: 'rank num' }, r.votes ? String(r.rank) : '–'),
+          el('span', { class: 'rank num' + (r.votes && r.rank <= 3 ? ' r' + r.rank : ''), 'aria-label': r.votes ? `المركز ${r.rank}` : 'بلا أصوات' },
+            !r.votes ? '–' : r.rank === 1 ? icon('trophy') : r.rank <= 3 ? icon('medal') : String(r.rank)),
           el('span', { class: 'tname' }, r.name),
-          el('span', { class: 'bar', role: 'presentation' }, el('i', { style: `width:${(r.votes / max) * 100}%` })),
+          el('span', { class: 'bar', role: 'presentation' }, el('i', { 'data-w': (r.votes / max) * 100, style: `width:${first ? 0 : (r.votes / max) * 100}%` })),
           el('span', { class: 'votes' }, votesWord(r.votes).replace(/^0 صوتاً$/, 'لا أصوات')),
           el('span', { class: 'share num' }, r.pct + '%')),
         variants && el('details', { class: 'variants', 'data-id': r.id, open: open.has(String(r.id)) },
@@ -187,6 +215,10 @@
             el('button', { class: 'link link-ink', onclick: () => detach(r, v) }, 'ليست له'))))));
     }));
     box.replaceChildren(head, list);
+    if (first) {   // أول عرض: الصفوف تدخل والأشرطة تمتلئ
+      if (FX.on) Motion.animate([...list.children], { opacity: [0, 1], x: [18, 0] }, { delay: Motion.stagger(0.05), duration: 0.4 });
+      requestAnimationFrame(() => requestAnimationFrame(() => list.querySelectorAll('.bar i').forEach((b) => { b.style.width = b.dataset.w + '%'; })));
+    }
   }
 
   function renderReview() {
@@ -197,7 +229,7 @@
     }
     if (!data.pending.length) {
       box.replaceChildren(emptyState('لا شيء ينتظر المراجعة',
-        'كل الأسماء التي كتبها الطلاب حُسبت لأصحابها. ستظهر هنا أي أسماء لا يستطيع النظام تحديد صاحبها.'));
+        'كل الأسماء التي كتبها الطلاب حُسبت لأصحابها. ستظهر هنا أي أسماء لا يستطيع النظام تحديد صاحبها.', null, 'seal-check'));
       return;
     }
     const teachers = [...data.results].sort((a, b) => a.name.localeCompare(b.name, 'ar'));

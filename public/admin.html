@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f3eee3">
+  <meta name="theme-color" content="#fff8e8">
   <meta name="robots" content="noindex">
   <title>لوحة النتائج</title>
   <link rel="stylesheet" href="/css/app.css">
@@ -12,6 +12,7 @@
   <!-- الدخول / الإعداد الأول -->
   <div class="gate" id="gate" hidden>
     <form id="gate-form" novalidate>
+      <span class="badge sm" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="/icons.svg#lock"/></svg></span>
       <h1 class="display" id="gate-title">لوحة النتائج</h1>
       <p class="sec" id="gate-lede"></p>
       <div class="field">
@@ -27,7 +28,7 @@
     <header class="mast no-print">
       <div>
         <p class="sec" id="m-school"></p>
-        <h1 class="display">لوحة النتائج</h1>
+        <h1 class="display"><svg class="ic" aria-hidden="true"><use href="/icons.svg#trophy"/></svg>لوحة النتائج</h1>
       </div>
       <div class="side">
         <span class="status" id="m-status"></span>
@@ -36,11 +37,11 @@
     </header>
 
     <div class="tabs no-print" role="tablist" aria-label="أقسام اللوحة">
-      <button role="tab" id="t-results" aria-controls="tab-results" aria-selected="true">النتائج</button>
-      <button role="tab" id="t-review" aria-controls="tab-review" aria-selected="false">المراجعة<span class="count" id="review-count" hidden></span></button>
-      <button role="tab" id="t-teachers" aria-controls="tab-teachers" aria-selected="false">المعلّمون</button>
-      <button role="tab" id="t-qr" aria-controls="tab-qr" aria-selected="false">الباركود</button>
-      <button role="tab" id="t-settings" aria-controls="tab-settings" aria-selected="false">الإعدادات</button>
+      <button role="tab" id="t-results" aria-controls="tab-results" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="/icons.svg#chart-bar"/></svg>النتائج</button>
+      <button role="tab" id="t-review" aria-controls="tab-review" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#list-checks"/></svg>المراجعة<span class="count" id="review-count" hidden></span></button>
+      <button role="tab" id="t-teachers" aria-controls="tab-teachers" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#chalkboard-teacher"/></svg>المعلّمون</button>
+      <button role="tab" id="t-qr" aria-controls="tab-qr" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#qr-code"/></svg>الباركود</button>
+      <button role="tab" id="t-settings" aria-controls="tab-settings" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#gear"/></svg>الإعدادات</button>
     </div>
 
     <!-- النتائج -->
@@ -96,7 +97,7 @@
           <p class="error" id="qr-error" role="alert" hidden></p>
           <div class="inline">
             <button class="btn btn-primary" type="submit">حدّث الباركود</button>
-            <button class="btn" type="button" id="qr-print">اطبع الملصق</button>
+            <button class="btn" type="button" id="qr-print"><svg class="ic" aria-hidden="true"><use href="/icons.svg#printer"/></svg>اطبع الملصق</button>
           </div>
           <a class="link" id="qr-download" download="qr.svg" href="#">نزّل الباركود وحده (SVG)</a>
         </form>
@@ -105,8 +106,9 @@
       <div class="poster-wrap">
         <div class="poster">
           <div class="frame">
+            <span class="badge" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="/icons.svg#student"/></svg></span>
             <p class="school" id="p-school"></p>
-            <h2 class="display" id="p-title"></h2>
+            <h2 class="display"><span class="hl" id="p-title"></span></h2>
             <div class="qr" id="p-qr" role="img" aria-label="باركود صفحة التصويت"></div>
             <ol>
               <li>افتح كاميرا هاتفك</li>
@@ -150,7 +152,7 @@
           <p class="sec">يحذف كل الأصوات ويبدأ استفتاءً جديداً. قائمة المعلّمين تبقى كما هي.</p>
           <div class="inline">
             <button class="btn btn-danger" type="button" id="reset-btn">احذف كل الأصوات</button>
-            <button class="btn" type="button" id="logout-btn">سجّل الخروج</button>
+            <button class="btn" type="button" id="logout-btn"><svg class="ic" aria-hidden="true"><use href="/icons.svg#sign-out"/></svg>سجّل الخروج</button>
           </div>
         </section>
       </div>
@@ -174,6 +176,8 @@
     </form>
   </dialog>
   <div class="toast" id="toast" role="status" hidden></div>
+  <script src="/vendor/motion.js" defer></script>
+  <script src="/js/fx.js" defer></script>
   <script src="/js/admin.js" defer></script>
 </body>
 </html>

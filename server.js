@@ -3,6 +3,7 @@ const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const zlib = require('node:zlib');
 const QRCode = require('qrcode');
 const { open } = require('./lib/store');
 
@@ -228,6 +229,7 @@ const adminRoutes = {
   },
 };
 
+const gzCache = new Map();
 function serveStatic(req, res, pathname) {
   let rel = pathname;
   if (rel === '/') rel = '/index.html';
@@ -241,12 +243,23 @@ function serveStatic(req, res, pathname) {
       return;
     }
     const ext = path.extname(file);
-    res.writeHead(200, {
+    const headers = {
       'Content-Type': MIME[ext] || 'application/octet-stream',
-      'Cache-Control': ext === '.woff2' ? 'public, max-age=31536000, immutable' : 'no-cache',
+      'Cache-Control': ext === '.woff2' ? 'public, max-age=31536000, immutable'
+        : rel.startsWith('/vendor/') ? 'public, max-age=604800' : 'no-cache',
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'same-origin',
-    });
+    };
+    // ضغط الملفات النصية (مهم لشبكات الجوال)
+    if (/\.(js|css|svg|html)$/.test(ext) && /\bgzip\b/.test(req.headers['accept-encoding'] || '')) {
+      const stamp = fs.statSync(file).mtimeMs;
+      let hit = gzCache.get(file);
+      if (!hit || hit.stamp !== stamp) { hit = { stamp, body: zlib.gzipSync(data) }; gzCache.set(file, hit); }
+      headers['Content-Encoding'] = 'gzip';
+      headers.Vary = 'Accept-Encoding';
+      data = hit.body;
+    }
+    res.writeHead(200, headers);
     res.end(data);
   });
 }
