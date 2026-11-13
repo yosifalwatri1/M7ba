@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3eee3">
+  <meta name="robots" content="noindex">
+  <title>لوحة النتائج</title>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <!-- الدخول / الإعداد الأول -->
+  <div class="gate" id="gate" hidden>
+    <form id="gate-form" novalidate>
+      <h1 class="display" id="gate-title">لوحة النتائج</h1>
+      <p class="sec" id="gate-lede"></p>
+      <div class="field">
+        <label for="gate-pass" id="gate-label">كلمة المرور</label>
+        <input class="input" id="gate-pass" type="password" autocomplete="current-password" aria-describedby="gate-error">
+        <p class="error" id="gate-error" role="alert" hidden></p>
+      </div>
+      <button class="btn btn-primary" id="gate-btn" type="submit">ادخل</button>
+    </form>
+  </div>
+
+  <div class="shell" id="app" hidden>
+    <header class="mast no-print">
+      <div>
+        <p class="sec" id="m-school"></p>
+        <h1 class="display">لوحة النتائج</h1>
+      </div>
+      <div class="side">
+        <span class="status" id="m-status"></span>
+        <a class="btn btn-sm" href="/" target="_blank" rel="noopener">افتح صفحة التصويت</a>
+      </div>
+    </header>
+
+    <div class="tabs no-print" role="tablist" aria-label="أقسام اللوحة">
+      <button role="tab" id="t-results" aria-controls="tab-results" aria-selected="true">النتائج</button>
+      <button role="tab" id="t-review" aria-controls="tab-review" aria-selected="false">المراجعة<span class="count" id="review-count" hidden></span></button>
+      <button role="tab" id="t-teachers" aria-controls="tab-teachers" aria-selected="false">المعلّمون</button>
+      <button role="tab" id="t-qr" aria-controls="tab-qr" aria-selected="false">الباركود</button>
+      <button role="tab" id="t-settings" aria-controls="tab-settings" aria-selected="false">الإعدادات</button>
+    </div>
+
+    <!-- النتائج -->
+    <section id="tab-results" role="tabpanel" aria-labelledby="t-results">
+      <dl class="figures" id="figures"></dl>
+      <div id="leader"></div>
+      <div class="section-head">
+        <h2>ترتيب المعلّمين</h2>
+        <p class="meta">النسبة = أصوات المعلّم ÷ مجموع الأصوات المحسوبة · تتحدّث تلقائياً</p>
+      </div>
+      <div class="panel" id="results"></div>
+    </section>
+
+    <!-- المراجعة -->
+    <section id="tab-review" role="tabpanel" aria-labelledby="t-review" hidden>
+      <div class="section-head">
+        <h2>أسماء تحتاج قرارك</h2>
+        <p class="meta">أسماء كتبها الطلاب ولم يتأكّد النظام لمن هي، فلم يحسبها لأحد</p>
+      </div>
+      <div class="panel" id="review"></div>
+    </section>
+
+    <!-- المعلّمون -->
+    <section id="tab-teachers" role="tabpanel" aria-labelledby="t-teachers" hidden>
+      <div class="split">
+        <form class="stack" id="add-form">
+          <h2 style="font-size:var(--t-h3)">أضف معلّمين</h2>
+          <div class="field">
+            <label for="add-names">الأسماء الكاملة، اسم في كل سطر</label>
+            <textarea class="textarea" id="add-names" spellcheck="false" aria-describedby="add-hint"></textarea>
+            <p class="hint" id="add-hint">اكتب الاسم الثلاثي إن أمكن؛ كلّما كان الاسم أكمل كانت المطابقة أدقّ.</p>
+          </div>
+          <p class="error" id="add-error" role="alert" hidden></p>
+          <button class="btn btn-primary" type="submit">أضف المعلّمين</button>
+        </form>
+        <div>
+          <div class="section-head"><h2>قائمة المعلّمين</h2><p class="meta" id="roster-count"></p></div>
+          <div class="panel" id="roster"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- الباركود -->
+    <section id="tab-qr" role="tabpanel" aria-labelledby="t-qr" hidden>
+      <div class="split no-print" style="margin-bottom:2rem">
+        <form class="stack" id="qr-form">
+          <h2 style="font-size:var(--t-h3)">رابط صفحة التصويت</h2>
+          <div class="field">
+            <label for="qr-url">الرابط الذي سيفتحه الطلاب</label>
+            <input class="input num" id="qr-url" type="url" dir="ltr" inputmode="url" aria-describedby="qr-hint">
+            <p class="hint" id="qr-hint">يجب أن يكون رابط الموقع المنشور على الإنترنت، لا رابطاً محلياً.</p>
+          </div>
+          <p class="error" id="qr-error" role="alert" hidden></p>
+          <div class="inline">
+            <button class="btn btn-primary" type="submit">حدّث الباركود</button>
+            <button class="btn" type="button" id="qr-print">اطبع الملصق</button>
+          </div>
+          <a class="link" id="qr-download" download="qr.svg" href="#">نزّل الباركود وحده (SVG)</a>
+        </form>
+        <p class="sec">علّق الملصق في الفصول أو اعرضه على الشاشة. الطالب يوجّه كاميرا هاتفه نحو الرمز فتُفتح صفحة التصويت مباشرة.</p>
+      </div>
+      <div class="poster-wrap">
+        <div class="poster">
+          <div class="frame">
+            <p class="school" id="p-school"></p>
+            <h2 class="display" id="p-title"></h2>
+            <div class="qr" id="p-qr" role="img" aria-label="باركود صفحة التصويت"></div>
+            <ol>
+              <li>افتح كاميرا هاتفك</li>
+              <li>وجّهها نحو الرمز</li>
+              <li>اكتب اسم معلّمك وأرسل</li>
+            </ol>
+            <p class="url" id="p-url"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- الإعدادات -->
+    <section id="tab-settings" role="tabpanel" aria-labelledby="t-settings" hidden>
+      <div class="settings">
+        <section>
+          <h2>الاستفتاء</h2>
+          <form class="stack" id="set-form">
+            <div class="field"><label for="set-school">اسم المدرسة</label><input class="input" id="set-school" maxlength="80"></div>
+            <div class="field"><label for="set-title">سؤال الاستفتاء</label><input class="input" id="set-title" maxlength="80"></div>
+            <label class="check"><input type="checkbox" id="set-open"> <span>التصويت مفتوح للطلاب</span></label>
+            <div><button class="btn btn-primary" type="submit">احفظ الإعدادات</button></div>
+          </form>
+        </section>
+        <section>
+          <h2>البيانات</h2>
+          <p class="sec">ملف يفتح في Excel وفيه كل ترشيح كما كتبه الطالب والمعلّم الذي حُسب له.</p>
+          <div><a class="btn" href="/api/admin/export.csv">نزّل كل الأصوات (CSV)</a></div>
+        </section>
+        <section>
+          <h2>كلمة المرور</h2>
+          <form class="stack" id="pass-form">
+            <div class="field"><label for="pass-cur">كلمة المرور الحالية</label><input class="input" id="pass-cur" type="password" autocomplete="current-password"></div>
+            <div class="field"><label for="pass-new">كلمة المرور الجديدة</label><input class="input" id="pass-new" type="password" autocomplete="new-password"><p class="hint">6 أحرف على الأقل.</p></div>
+            <p class="error" id="pass-error" role="alert" hidden></p>
+            <div><button class="btn" type="submit">غيّر كلمة المرور</button></div>
+          </form>
+        </section>
+        <section>
+          <h2>منطقة الخطر</h2>
+          <p class="sec">يحذف كل الأصوات ويبدأ استفتاءً جديداً. قائمة المعلّمين تبقى كما هي.</p>
+          <div class="inline">
+            <button class="btn btn-danger" type="button" id="reset-btn">احذف كل الأصوات</button>
+            <button class="btn" type="button" id="logout-btn">سجّل الخروج</button>
+          </div>
+        </section>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="dlg" aria-labelledby="dlg-title">
+    <form method="dialog" id="dlg-form">
+      <h2 id="dlg-title"></h2>
+      <p class="sec" id="dlg-body"></p>
+      <div class="field" id="dlg-field" hidden>
+        <label for="dlg-input" id="dlg-label"></label>
+        <input class="input" id="dlg-input" autocomplete="off">
+        <select class="select" id="dlg-select"></select>
+      </div>
+      <p class="error" id="dlg-error" role="alert" hidden></p>
+      <div class="foot">
+        <button class="btn btn-primary" id="dlg-ok" value="ok"></button>
+        <button class="btn" type="button" id="dlg-cancel">تراجع</button>
+      </div>
+    </form>
+  </dialog>
+  <div class="toast" id="toast" role="status" hidden></div>
+  <script src="/js/admin.js" defer></script>
+</body>
+</html>

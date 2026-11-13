@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f3eee3">
+  <meta name="robots" content="noindex">
+  <title>رشّح معلّمك المفضّل</title>
+  <link rel="preload" href="/fonts/aref-ruqaa-arabic-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+  <div class="ballot">
+    <header class="ballot-head">
+      <span class="school" id="school">استفتاء المدرسة</span>
+      <span class="meta">ورقة ترشيح</span>
+    </header>
+
+    <main class="ballot-main" id="main" aria-live="polite">
+      <!-- النموذج -->
+      <section id="view-form" hidden>
+        <h1 class="display ballot-title" id="title">من هو معلّمك المفضّل؟</h1>
+        <p class="ballot-lede">اكتب اسم المعلّم الذي تراه الأفضل. يكفي الاسم الأول واسم العائلة.</p>
+        <form id="form" novalidate>
+          <div class="field">
+            <label for="name">اسم المعلّم</label>
+            <input class="input" id="name" name="name" type="text" inputmode="text" autocomplete="off"
+                   autocapitalize="off" spellcheck="false" maxlength="80" enterkeyhint="send"
+                   placeholder="مثال: محمد العنزي" aria-describedby="name-error">
+            <p class="error" id="name-error" role="alert" hidden></p>
+          </div>
+          <div id="suggest-wrap" hidden>
+            <p class="suggest-cap" id="suggest-cap">هل تقصد؟</p>
+            <ul class="suggest" id="suggest" aria-labelledby="suggest-cap"></ul>
+          </div>
+          <button class="btn btn-primary btn-block" id="send" type="submit">أرسل ترشيحي</button>
+        </form>
+      </section>
+
+      <!-- الاسم يحتمل أكثر من معلّم -->
+      <section id="view-choose" hidden>
+        <h1 class="display ballot-title">أيّ معلّم تقصد؟</h1>
+        <p class="ballot-lede">الاسم الذي كتبته «<span id="typed"></span>» قريب من أكثر من معلّم. اختر واحداً ليُحسب صوتك له.</p>
+        <div class="stack">
+          <ul class="suggest" id="choices"></ul>
+          <p class="error" id="choose-error" role="alert" hidden></p>
+          <button class="btn btn-block" id="none" type="button">ليس أحداً منهم — أرسل الاسم كما كتبته</button>
+          <button class="link link-ink" id="back" type="button">عدّل الاسم</button>
+        </div>
+      </section>
+
+      <!-- النتيجة -->
+      <section id="view-done" class="verdict" hidden>
+        <div class="seal" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h1 class="display">وصل ترشيحك</h1>
+        <p id="done-line">سُجّل صوتك لـ</p>
+        <p class="who" id="done-who"></p>
+        <p>شكراً لمشاركتك. يمكنك إغلاق الصفحة الآن.</p>
+      </section>
+
+      <section id="view-already" class="verdict" hidden>
+        <h1 class="display">سبق أن رشّحت</h1>
+        <p>سُجّل ترشيحك من هذا الجهاز من قبل. لكل طالب صوت واحد.</p>
+      </section>
+
+      <section id="view-closed" class="verdict" hidden>
+        <h1 class="display">التصويت مغلق</h1>
+        <p>انتهت فترة الترشيح. شكراً لكل من شارك.</p>
+      </section>
+
+      <section id="view-error" class="verdict" hidden>
+        <h1 class="display">تعذّر الاتصال</h1>
+        <p>لم نستطع فتح صفحة الترشيح. تأكّد من اتصالك بالإنترنت ثم حاول مجدداً.</p>
+        <p style="margin-top:1.25rem"><button class="btn" type="button" onclick="location.reload()">حاول مجدداً</button></p>
+      </section>
+    </main>
+
+    <footer class="ballot-foot">
+      <p class="meta">صوت واحد لكل طالب · لا يُسجَّل اسمك مع الترشيح</p>
+    </footer>
+  </div>
+  <script src="/js/vote.js" defer></script>
+</body>
+</html>
