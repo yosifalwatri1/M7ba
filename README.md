@@ -86,11 +86,17 @@ docker run -p 3000:3000 -v teacher-vote-data:/data teacher-vote
 
 - صوت واحد لكل جهاز (عبر ملف تعريف الارتباط). طالب يمسح بيانات متصفحه أو يستخدم جهازاً آخر يستطيع التصويت مجدداً؛ المنع التام يتطلّب رقماً خاصاً لكل طالب.
 
+## التصميم
+
+مشهد ليلي لأبراج الكويت وبرج التحرير فوق مياه الخليج، مرسوم بالكود في `public/js/skyline.js` (بلا صور)، ويُعاد استخدامه في كل الصفحات وفي ملصق الطباعة.
+الألوان: كحلي الليل، أبيض دافئ، وذهبي واحد لكل ما يُضغط. بلا بطاقات أو صناديق: خطوط رفيعة وخط كوفي كبير.
+في لوحة النتائج يظهر أعلى المعلّمين كأبراج، والمتصدّر يحمل الكرة الذهبية.
+
 ## مكتبات الواجهة (مضمّنة في `public/`، لا تحتاج إنترنت خارجي)
 
 - الأيقونات: [Phosphor Icons](https://github.com/phosphor-icons/core) (نمط duotone) — MIT، مجمّعة في `public/icons.svg`.
 - التحريكات: [Motion](https://github.com/motiondivision/motion) — MIT.
-- قصاصات الاحتفال: [canvas-confetti](https://github.com/catdad/canvas-confetti) — ISC.
+- الألعاب النارية بعد التصويت: [canvas-confetti](https://github.com/catdad/canvas-confetti) — ISC.
 - الخطوط: Noto Kufi Arabic للعناوين و IBM Plex Sans Arabic للنصوص — رخصة OFL.
 
 من فضّل «تقليل الحركة» في إعدادات جهازه تظهر له الصفحة بلا تحريكات.

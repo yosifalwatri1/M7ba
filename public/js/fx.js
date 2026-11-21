@@ -1,4 +1,4 @@
-/* التحريكات: Motion (motion.dev) + canvas-confetti. كل شيء اختياري:
+/* التحريكات: Motion (motion.dev) + canvas-confetti (ألعاب نارية). كل شيء اختياري:
    إن لم تُحمَّل المكتبة أو فضّل المستخدم تقليل الحركة، تظهر العناصر مباشرة. */
 window.FX = (() => {
   'use strict';
@@ -24,16 +24,18 @@ window.FX = (() => {
       if (!on || !node) return;
       M.animate(node, { scale: [0.6, 1], rotate: [-14, 0] }, { type: 'spring', stiffness: 260, damping: 12 });
     },
-    /** احتفال بعد التصويت */
-    celebrate(badge) {
-      this.pop(badge);
+    /** احتفال بعد التصويت: الأبراج تضيء وألعاب نارية فوقها */
+    celebrate() {
+      if (window.Skyline) Skyline.light(true);
       if (calm || !window.confetti) return;
       const canvas = document.getElementById('fx');
       const fire = canvas ? window.confetti.create(canvas, { resize: true }) : window.confetti;
-      const colors = ['#ffc83d', '#2b59e8', '#1b2440', '#ffffff'];
-      fire({ particleCount: 70, spread: 75, startVelocity: 42, origin: { x: 0.5, y: 0.45 }, colors });
-      setTimeout(() => fire({ particleCount: 40, angle: 60, spread: 60, origin: { x: 0, y: 0.6 }, colors }), 220);
-      setTimeout(() => fire({ particleCount: 40, angle: 120, spread: 60, origin: { x: 1, y: 0.6 }, colors }), 360);
+      const colors = ['#f3c76c', '#e9b44c', '#5cc0b5', '#ffffff'];
+      const burst = (x, y, delay) => setTimeout(() => fire({
+        particleCount: 46, spread: 360, startVelocity: 22, gravity: 0.55, decay: 0.93, ticks: 140,
+        scalar: 0.75, shapes: ['circle'], origin: { x, y }, colors,
+      }), delay);
+      burst(0.5, 0.16, 0); burst(0.3, 0.1, 380); burst(0.7, 0.13, 720); burst(0.45, 0.06, 1100);
     },
     /** عدّاد يصعد من القيمة السابقة إلى الجديدة */
     count(node, to, fmt = (v) => String(v)) {

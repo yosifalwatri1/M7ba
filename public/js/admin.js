@@ -77,7 +77,7 @@
   // ---------- الدخول ----------
   let gateMode = 'login';
   function showGate(login) {
-    $('app').hidden = true; $('gate').hidden = false;
+    $('app').hidden = true; $('app-scene').hidden = true; $('gate').hidden = false;
     gateMode = login ? 'login' : 'setup';
     $('gate-title').textContent = login ? 'لوحة النتائج' : 'إعداد اللوحة';
     FX.enter($('gate-form'));
@@ -139,7 +139,7 @@
 
   function renderResults() {
     const { totals, results, settings } = data;
-    $('m-school').textContent = settings.school || 'استفتاء المعلّم المفضّل';
+    $('m-school').textContent = settings.school || 'مبادرة معلّمي المفضّل';
     const st = $('m-status');
     st.textContent = settings.open ? 'التصويت مفتوح' : 'التصويت مغلق';
     st.classList.toggle('is-open', settings.open);
@@ -152,8 +152,8 @@
       const defs = [['all', 'إجمالي المشاركات', 'users-three'], ['counted', 'أصوات محسوبة', 'check-circle'],
         ['pending', 'بانتظار المراجعة', 'magnifying-glass'], ['teachers', 'معلّمون في القائمة', 'chalkboard-teacher']];
       if (!box.children.length) {
-        box.replaceChildren(...defs.map(([k, label, ico]) => el('div', { class: 'figure', 'data-k': k },
-          icon(ico), el('dt', {}, label), el('dd', { class: 'num' }, '0'))));
+        box.replaceChildren(...defs.map(([k, label]) => el('div', { class: 'figure', 'data-k': k },
+          el('dt', {}, label), el('dd', { class: 'num' }, '0'))));
         if (FX.on) Motion.animate([...box.children], { opacity: [0, 1], y: [12, 0] }, { delay: Motion.stagger(0.06), duration: 0.4 });
       }
       for (const [k] of defs) {
@@ -173,29 +173,26 @@
           el('button', { class: 'link link-ink', onclick: () => dropReason(r, q) }, 'احذف التعليق')))));
 
     if (!totals.teachers) {
-      leader.replaceChildren();
+      leader.replaceChildren(); $('towers').replaceChildren();
       box.replaceChildren(emptyState('ابدأ بقائمة المعلّمين',
         'أضف أسماء معلّمي المدرسة ليتعرّف النظام على ما يكتبه الطلاب ويحسب كل صوت لصاحبه.',
         el('button', { class: 'btn btn-primary', onclick: () => selectTab('teachers') }, 'أضف المعلّمين'), 'chalkboard-teacher'));
       return;
     }
     if (!totals.counted) {
-      leader.replaceChildren();
+      leader.replaceChildren(); $('towers').replaceChildren();
     } else {
       const tops = results.filter((r) => r.rank === 1);
       const leadKey = tops.map((t) => t.id).join(',');
-      const cup = el('span', { class: 'cup' }, icon(tops.length > 1 ? 'medal' : 'trophy'));
-      const pctNode = el('span', { class: 'num' }, tops[0].pct + '%');
-      const block = el('div', { class: 'leader' }, cup,
-        el('p', { class: 'kicker' }, tops.length > 1 ? 'تعادل في الصدارة' : 'المتصدّر الآن'),
+      const block = el('div', { class: 'leader' },
+        el('p', { class: 'eyebrow' }, tops.length > 1 ? 'تعادل في الصدارة' : 'المتصدّر الآن'),
         el('p', { class: 'display name' }, tops.map((t) => t.name).join(' و ')),
-        el('p', { class: 'pct' }, pctNode,
+        el('p', { class: 'pct' }, el('b', { class: 'num' }, tops[0].pct + '%'),
           el('small', {}, votesWord(tops[0].votes) + (tops.length > 1 ? ' لكلٍّ منهم' : ''))));
       leader.replaceChildren(block);
-      if (leader.dataset.key !== leadKey) {   // متصدّر جديد: احتفل
+      if (leader.dataset.key !== leadKey) {   // متصدّر جديد
         leader.dataset.key = leadKey;
-        FX.pop(cup);
-        if (FX.on) Motion.animate(block, { opacity: [0, 1], y: [10, 0] }, { duration: 0.4 });
+        if (FX.on) Motion.animate([...block.children], { opacity: [0, 1], y: [16, 0] }, { delay: Motion.stagger(0.08), duration: 0.5 });
       }
     }
 
@@ -208,7 +205,7 @@
       return el('li', { class: r.rank === 1 && r.votes ? 'is-first' : '' },
         el('div', { class: 'row' },
           el('span', { class: 'rank num' + (r.votes && r.rank <= 3 ? ' r' + r.rank : ''), 'aria-label': r.votes ? `المركز ${r.rank}` : 'بلا أصوات' },
-            !r.votes ? '–' : r.rank === 1 ? icon('trophy') : r.rank <= 3 ? icon('medal') : String(r.rank)),
+            !r.votes ? '–' : String(r.rank)),
           el('span', { class: 'tname' }, r.name),
           el('span', { class: 'bar', role: 'presentation' }, el('i', { 'data-w': (r.votes / max) * 100, style: `width:${first ? 0 : (r.votes / max) * 100}%` })),
           el('span', { class: 'votes' }, votesWord(r.votes).replace(/^0 صوتاً$/, 'لا أصوات')),
@@ -221,10 +218,25 @@
         said(r));
     }));
     box.replaceChildren(head, list);
+    renderTowers(results.filter((r) => r.votes).slice(0, 6), max, first);
     if (first) {   // أول عرض: الصفوف تدخل والأشرطة تمتلئ
       if (FX.on) Motion.animate([...list.children], { opacity: [0, 1], x: [18, 0] }, { delay: Motion.stagger(0.05), duration: 0.4 });
       requestAnimationFrame(() => requestAnimationFrame(() => list.querySelectorAll('.bar i').forEach((b) => { b.style.width = b.dataset.w + '%'; })));
     }
+  }
+
+  // أبراج النتائج: ارتفاع كل برج بعدد أصوات المعلّم، والمتصدّر يحمل الكرة الذهبية
+  function renderTowers(top, max, first) {
+    const box = $('towers');
+    if (!top.length) { box.replaceChildren(); return; }
+    const h = (r) => `${Math.max(6, (r.votes / max) * 82)}%`;
+    const prev = new Map([...box.querySelectorAll('li[data-id]')].map((li) => [li.dataset.id, li.style.getPropertyValue('--h')]));
+    const items = top.map((r) => el('li', { class: r.rank === 1 ? 'lead' : '', 'data-id': r.id,
+      style: `--h:${first || !prev.has(String(r.id)) ? '0%' : prev.get(String(r.id))}` },
+      el('span', { class: 'p num' }, r.pct + '%'), el('span', { class: 't' })));
+    box.replaceChildren(el('ol', {}, items),
+      el('div', { class: 'names' }, top.map((r) => el('span', { class: 'n' + (r.rank === 1 ? ' lead-n' : '') }, r.name))));
+    requestAnimationFrame(() => requestAnimationFrame(() => items.forEach((li, i) => li.style.setProperty('--h', h(top[i])))));
   }
 
   function renderReview() {
@@ -400,7 +412,7 @@
   }
   let started = false;
   async function start() {
-    $('gate').hidden = true; $('app').hidden = false;
+    $('gate').hidden = true; $('app').hidden = false; $('app-scene').hidden = false;
     await refresh();
     renderSettingsOnce();
     let saved; try { saved = sessionStorage.getItem('tab'); } catch {}

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#fff8e8">
+  <meta name="theme-color" content="#06132a">
   <meta name="robots" content="noindex">
   <title>لوحة النتائج</title>
   <link rel="stylesheet" href="/css/app.css">
@@ -11,8 +11,9 @@
 <body>
   <!-- الدخول / الإعداد الأول -->
   <div class="gate" id="gate" hidden>
+    <div class="scene scene-hero" data-skyline="hero"></div>
     <form id="gate-form" novalidate>
-      <span class="badge sm" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="/icons.svg#lock"/></svg></span>
+      <p class="eyebrow">مبادرة معلّمي المفضّل</p>
       <h1 class="display" id="gate-title">لوحة النتائج</h1>
       <p class="sec" id="gate-lede"></p>
       <div class="field">
@@ -24,11 +25,12 @@
     </form>
   </div>
 
+  <div class="scene scene-band no-print" id="app-scene" data-skyline="hero" hidden></div>
   <div class="shell" id="app" hidden>
     <header class="mast no-print">
       <div>
-        <p class="sec" id="m-school"></p>
-        <h1 class="display"><svg class="ic" aria-hidden="true"><use href="/icons.svg#trophy"/></svg>لوحة النتائج</h1>
+        <p class="eyebrow" id="m-school"></p>
+        <h1>لوحة النتائج</h1>
       </div>
       <div class="side">
         <span class="status" id="m-status"></span>
@@ -49,6 +51,7 @@
     <section id="tab-results" role="tabpanel" aria-labelledby="t-results">
       <dl class="figures" id="figures"></dl>
       <div id="leader"></div>
+      <div class="towers" id="towers" aria-hidden="true"></div>
       <div class="section-head">
         <h2>ترتيب المعلّمين</h2>
         <p class="meta">النسبة = أصوات المعلّم ÷ مجموع الأصوات المحسوبة · تتحدّث تلقائياً</p>
@@ -106,18 +109,17 @@
       </div>
       <div class="poster-wrap">
         <div class="poster">
-          <div class="frame">
-            <span class="badge" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="/icons.svg#student"/></svg></span>
             <p class="school" id="p-school"></p>
-            <h2 class="display"><span class="hl" id="p-title"></span></h2>
+            <h2 id="p-title"></h2>
+            <span class="rule" aria-hidden="true"></span>
             <div class="qr" id="p-qr" role="img" aria-label="باركود صفحة التصويت"></div>
             <ol>
-              <li>افتح كاميرا هاتفك</li>
+              <li>افتح الكاميرا</li>
               <li>وجّهها نحو الرمز</li>
-              <li>اكتب اسم معلّمك وأرسل</li>
+              <li>رشّح معلّمك</li>
             </ol>
             <p class="url" id="p-url"></p>
-          </div>
+            <div class="scene-ink" data-skyline="ink"></div>
         </div>
       </div>
     </section>
@@ -177,6 +179,7 @@
     </form>
   </dialog>
   <div class="toast" id="toast" role="status" hidden></div>
+  <script src="/js/skyline.js"></script>
   <script src="/vendor/motion.js" defer></script>
   <script src="/js/fx.js" defer></script>
   <script src="/js/admin.js" defer></script>

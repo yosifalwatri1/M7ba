@@ -32,7 +32,6 @@
     const b = document.createElement('button');
     b.type = 'button';
     b.setAttribute('aria-pressed', pressed ? 'true' : 'false');
-    b.insertAdjacentHTML('afterbegin', '<svg class="ic" aria-hidden="true"><use href="/icons.svg#chalkboard-teacher"/></svg>');
     const n = document.createElement('span');
     n.className = 'nm';
     n.textContent = item.name;
@@ -100,7 +99,7 @@
         $('done-who').textContent = payload.name;
       }
       show('done');
-      FX.celebrate($('done-badge'));
+      FX.celebrate();
     } catch (err) {
       if (err.status === 409) { show('already'); return; }
       if (err.status === 403) { show('closed'); return; }
@@ -135,7 +134,6 @@
       if (s.voted) return show('already');
       if (!s.open) return show('closed');
       show('form');
-      FX.pop($('hero-badge'));
     } catch {
       show('error');
     }
