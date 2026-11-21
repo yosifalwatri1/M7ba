@@ -42,14 +42,14 @@ function layout(results) {
   const groups = [...bySubject].sort((a, b) => b[1].length - a[1].length);
   const span = hfov() * 0.92, weights = groups.map(([, l]) => l.length + 0.7);
   const total = weights.reduce((a, b) => a + b, 0);
-  let cursor = -span / 2;
+  let cursor = -span / 2, k = 0;
   groups.forEach(([subject, list], gi) => {
     const w = (weights[gi] / total) * span, levels = list.length > 6 ? 3 : 2;
     const pts = [];
     list.forEach((r, i) => {
       // صفّ متعرّج: كل نجم بجانب الآخر وعلى ارتفاع مختلف، فلا تتداخل الأسماء
       const az = baseAz - (cursor + w * ((i + 0.5 + 0.35) / (list.length + 0.7)));       // من اليمين إلى اليسار
-      const el = 0.34 + (list.length === 1 ? 0.06 : (i % levels) * 0.12) + (gi % 2) * 0.05;
+      const el = 0.32 + ((k++) % 3) * 0.1;                                              // ثلاثة ارتفاعات متناوبة عبر كل النجوم
       const pos = new THREE.Vector3().copy(eye).add(dirOf(az, el).multiplyScalar(R));
       const sp = makeTeacherStar(); sp.position.copy(pos); group.add(sp);
       const lb = document.createElement('div'); lb.className = 'tag sky-tag';

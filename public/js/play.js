@@ -119,7 +119,7 @@ world.onFrame.add(() => {
 /* ---------- واجهة الرصيف السفلي ---------- */
 const dock = $('dock');
 function setDock(...kids) {
-  dock.replaceChildren(...kids);
+  dock.replaceChildren(...kids.flat().filter((k) => k != null && k !== false));
   if (!calm && window.Motion) Motion.animate([...dock.children], { opacity: [0, 1], y: [14, 0] }, { delay: Motion.stagger(0.06), duration: 0.45 });
 }
 function setStep(i) {
