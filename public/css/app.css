@@ -20,13 +20,13 @@
   src: url("../fonts/noto-kufi-arabic-arabic-600-normal.woff2") format("woff2"); }
 
 :root {
-  --night: #06132a;        /* L0 */
-  --night-2: #0b1f3d;      /* L1 */
-  --night-3: #12294d;      /* L2: نوافذ منبثقة */
+  --night: #14335f;        /* L0: أزرق الخليج */
+  --night-2: #1c4174;      /* L1 */
+  --night-3: #244c85;      /* L2: نوافذ منبثقة */
   --text: #f3efe4;
   --text-2: #c3ccdb;
-  --text-3: #8f9cb4;
-  --line: rgba(243, 239, 228, 0.13);
+  --text-3: #a7b6cc;
+  --line: rgba(243, 239, 228, 0.16);
   --line-strong: rgba(243, 239, 228, 0.4);
   --gold: #e9b44c;         /* اللون التفاعلي الوحيد */
   --gold-deep: #f3c76c;    /* للتمرير فوق الذهبي على خلفية داكنة */
@@ -127,19 +127,19 @@ a { color: var(--gold); text-underline-offset: 4px; }
 /* ============================================================
    المشهد: أبراج الكويت وبرج التحرير
    ============================================================ */
-.scene { position: relative; overflow: hidden; background: #071630; }
+.scene { position: relative; overflow: hidden; background: #14335f; }
 .scene > .sky-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .scene-hero { height: clamp(280px, 46vh, 480px); }
 .scene-band { height: clamp(170px, 22vw, 300px); }
 /* انتقال ناعم من البحر إلى الصفحة */
 .scene::after { content: ""; position: absolute; inset: auto 0 0; height: 30%; background: linear-gradient(transparent, var(--night)); pointer-events: none; }
 
-.sky-svg .city rect { fill: #0c2243; }
-.sky-svg .lib { fill: #22487a; }
+.sky-svg .city rect { fill: #1c4372; }
+.sky-svg .lib { fill: #4a78ad; }
 .sky-svg .pod-light { stroke: #f3c76c; stroke-width: 1.6; opacity: 0.85; }
 .sky-svg .pod-light.dim { opacity: 0.5; }
 .sky-svg .shaft { fill: #dfe6ee; }
-.sky-svg .plinth { fill: #0e2648; }
+.sky-svg .plinth { fill: #1b3f6c; }
 .sky-svg .win { fill: #f3c76c; opacity: 0.55; }
 .sky-svg .star { fill: #fff; opacity: var(--o, 0.7); }
 .sky-svg .beacon { fill: #ff4d4d; }
@@ -413,7 +413,7 @@ dialog {
   background: var(--night-3); border: 1px solid var(--line-strong); border-radius: 14px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
-dialog::backdrop { background: rgba(3, 9, 20, 0.7); }
+dialog::backdrop { background: rgba(8, 22, 44, 0.65); }
 dialog form { display: grid; gap: 1rem; }
 dialog h2 { font-family: var(--display); font-size: var(--t-h3); line-height: 1.5; }
 dialog .foot { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.25rem; }

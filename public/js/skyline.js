@@ -103,7 +103,7 @@
       <ellipse cx="1600" cy="${SEA}" rx="1500" ry="150" fill="url(#${id}-glow)"/>
       <g class="stars">${stars}</g>
       <g class="moon" transform="translate(2080 96)">
-        <circle r="19" fill="#f4ead0"/><circle cx="8" cy="-5" r="17" fill="#06142d"/>
+        <circle r="19" fill="#f4ead0"/><circle cx="8" cy="-5" r="17" fill="#13305c"/>
       </g>
       <rect x="0" y="${SEA}" width="${W}" height="${H - SEA}" fill="url(#${id}-sea)"/>
       <g class="reflect" mask="url(#${id}-fade)"><g transform="translate(0 ${SEA * 2}) scale(1 -1)">${land}</g></g>
@@ -118,13 +118,13 @@
 
   function defs(id) {
     return `<linearGradient id="${id}-sky" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#040c1d"/><stop offset=".5" stop-color="#0a1f40"/>
-        <stop offset=".78" stop-color="#173c61"/><stop offset=".85" stop-color="#2c4f6a"/></linearGradient>
+        <stop offset="0" stop-color="#0f2a52"/><stop offset=".5" stop-color="#1b437a"/>
+        <stop offset=".78" stop-color="#2d6097"/><stop offset=".85" stop-color="#4b769c"/></linearGradient>
       <radialGradient id="${id}-glow" cx=".5" cy="1" r=".5">
         <stop offset="0" stop-color="#e9a54c" stop-opacity=".6"/><stop offset=".45" stop-color="#c47e45" stop-opacity=".2"/>
         <stop offset="1" stop-color="#c47e45" stop-opacity="0"/></radialGradient>
       <linearGradient id="${id}-sea" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" stop-color="#0d2b4c"/><stop offset="1" stop-color="#06132a"/></linearGradient>
+        <stop offset="0" stop-color="#22508a"/><stop offset="1" stop-color="#14335f"/></linearGradient>
       <linearGradient id="${id}-fadeg" x1="0" y1="${SEA}" x2="0" y2="${H}" gradientUnits="userSpaceOnUse">
         <stop offset="0" stop-color="#fff" stop-opacity=".42"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
       <mask id="${id}-fade" maskUnits="userSpaceOnUse" x="0" y="${SEA}" width="${W}" height="${H - SEA}">
