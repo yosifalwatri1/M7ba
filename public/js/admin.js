@@ -100,7 +100,7 @@
   });
 
   // ---------- التبويبات ----------
-  const tabs = ['results', 'review', 'teachers', 'qr', 'settings'];
+  const tabs = ['results', 'review', 'teachers', 'pearls', 'qr', 'settings'];
   let shown = null;
   function selectTab(name) {
     for (const t of tabs) {
@@ -111,6 +111,7 @@
     if (FX.on && shown !== name) Motion.animate($('tab-' + name), { opacity: [0, 1], y: [8, 0] }, { duration: 0.28 });
     shown = name;
     if (name === 'qr' && data) renderPoster();
+    if (name === 'pearls' && data) renderQuestions().catch(() => {});
     try { sessionStorage.setItem('tab', name); } catch {}
   }
   tabs.forEach((t, i) => {
@@ -206,7 +207,7 @@
         el('div', { class: 'row' },
           el('span', { class: 'rank num' + (r.votes && r.rank <= 3 ? ' r' + r.rank : ''), 'aria-label': r.votes ? `المركز ${r.rank}` : 'بلا أصوات' },
             !r.votes ? '–' : String(r.rank)),
-          el('span', { class: 'tname' }, r.name),
+          el('span', { class: 'tname' }, r.name, r.subject || r.pearls ? el('span', { class: 'meta tmeta' }, [r.subject, r.pearls ? `${r.pearls} لؤلؤة` : ''].filter(Boolean).join(' · ')) : null),
           el('span', { class: 'bar', role: 'presentation' }, el('i', { 'data-w': (r.votes / max) * 100, style: `width:${first ? 0 : (r.votes / max) * 100}%` })),
           el('span', { class: 'votes' }, votesWord(r.votes).replace(/^0 صوتاً$/, 'لا أصوات')),
           el('span', { class: 'share num' }, r.pct + '%')),
@@ -290,7 +291,7 @@
 
   function renderRoster() {
     const box = $('roster');
-    const rows = data.results.map((r) => [r.id, r.name, r.votes]);
+    const rows = data.results.map((r) => [r.id, r.name, r.votes, r.subject]);
     if (!changed('roster', rows) || busyIn(box)) return;
     $('roster-count').textContent = data.results.length ? `${data.results.length} معلّماً` : '';
     if (!data.results.length) {
@@ -299,9 +300,10 @@
     }
     const teachers = [...data.results].sort((a, b) => a.name.localeCompare(b.name, 'ar'));
     box.replaceChildren(el('ul', { class: 'ledger troster' }, teachers.map((t) => el('li', {},
-      el('span', {}, t.name, ' ', el('span', { class: 'meta' }, t.votes ? `· ${votesWord(t.votes)}` : '')),
+      el('span', {}, t.name, ' ', el('span', { class: 'meta' }, [t.subject || 'بلا مادة', t.votes ? votesWord(t.votes) : ''].filter(Boolean).join(' · '))),
       el('span', { class: 'acts' },
         el('button', { class: 'link link-ink', onclick: () => rename(t) }, 'عدّل الاسم'),
+        el('button', { class: 'link link-ink', onclick: () => editSubject(t) }, 'المادة'),
         teachers.length > 1 && el('button', { class: 'link link-ink', onclick: () => merge(t, teachers) }, 'ادمج'),
         el('button', { class: 'link', onclick: () => remove(t) }, 'احذف'))))));
   }
@@ -351,6 +353,49 @@
     ask({ title: 'تعديل اسم المعلّم', ok: 'احفظ الاسم', input: t.name, label: 'الاسم الكامل',
       run: (name) => { if (!name) throw new Error('اكتب الاسم.'); return act('/api/admin/teachers/rename', { id: t.id, name }, 'حُفظ الاسم')(); } });
   }
+  function editSubject(t) {
+    ask({ title: `مادة ${t.name}`, ok: 'احفظ المادة', input: t.subject || '', label: 'المادة (اتركها فارغة لإزالتها)',
+      run: (subject) => act('/api/admin/teachers/subject', { id: t.id, subject }, 'حُفظت المادة')() });
+  }
+
+  // ---------- بنك أسئلة الغوص ----------
+  async function renderQuestions() {
+    const { items } = await api('/api/admin/questions');
+    const subjects = [...new Set(data.results.map((r) => r.subject).filter(Boolean))];
+    $('q-subjects').replaceChildren(...subjects.map((s) => el('option', { value: s })));
+    $('q-count').textContent = items.length ? `${items.length} سؤالاً` : '';
+    const box = $('q-list');
+    if (!items.length) {
+      box.replaceChildren(emptyState('لا أسئلة بعد', 'أضف أسئلة من منهج كل مادة. بدونها يتخطّى الطالب مرحلة الغوص.', null, 'list-checks'));
+      return;
+    }
+    box.replaceChildren(el('ul', { class: 'ledger troster' }, items.map((q) => el('li', {},
+      el('span', {}, el('span', { class: 'meta' }, q.subject + ' · '), q.q, ' ',
+        el('span', { class: 'meta' }, '(' + q.choices.map((c, i) => (i === q.answer ? `✓ ${c}` : c)).join('، ') + ')')),
+      el('span', { class: 'acts' }, el('button', { class: 'link', onclick: () => ask({
+        title: 'حذف هذا السؤال؟', ok: 'احذف السؤال', danger: true, body: q.q,
+        run: async () => { await api('/api/admin/questions/delete', { id: q.id }); toast('حُذف السؤال'); renderQuestions(); },
+      }) }, 'احذف'))))));
+  }
+  $('q-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = {
+      subject: $('q-subject').value.trim(), q: $('q-text').value.trim(),
+      choices: [$('q-c0').value, $('q-c1').value, $('q-c2').value].map((s) => s.trim()),
+      answer: Number(document.querySelector('input[name="q-answer"]:checked').value),
+    };
+    if (!body.choices[body.answer]) { setError($('q-error'), 'الخيار المحدّد صحيحاً فارغ.'); return; }
+    const kept = body.choices.map((c, i) => [c, i]).filter(([c]) => c);
+    body.answer = kept.findIndex(([, i]) => i === body.answer);
+    body.choices = kept.map(([c]) => c);
+    try {
+      await api('/api/admin/questions', body);
+      setError($('q-error'), '');
+      ['q-text', 'q-c0', 'q-c1', 'q-c2'].forEach((id) => { $(id).value = ''; });
+      toast('أُضيف السؤال'); $('q-text').focus(); renderQuestions();
+    } catch (err) { setError($('q-error'), err.message); }
+  });
+
   function merge(t, all) {
     ask({ title: `دمج ${t.name} مع معلّم آخر`, ok: 'ادمج وانقل الأصوات', label: 'انقل أصواته إلى',
       body: 'استخدم الدمج إذا تكرّر المعلّم نفسه باسمين. سيُحذف هذا الاسم وتنتقل أصواته كلها.',
@@ -365,7 +410,7 @@
 
   $('add-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const names = $('add-names').value.split(/\n|،|,/).map((s) => s.trim()).filter(Boolean);
+    const names = $('add-names').value.split(/\n/).map((s) => s.trim()).filter(Boolean);
     if (!names.length) { setError($('add-error'), 'اكتب اسماً واحداً على الأقل.'); return; }
     try {
       const r = await api('/api/admin/teachers', { names });

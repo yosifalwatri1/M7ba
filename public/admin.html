@@ -35,6 +35,7 @@
       <div class="side">
         <span class="status" id="m-status"></span>
         <a class="link link-ink" href="/about" target="_blank" rel="noopener">عن المبادرة</a>
+        <a class="link" href="/sky" target="_blank" rel="noopener">سماء المدرسة</a>
         <a class="btn btn-sm" href="/" target="_blank" rel="noopener">افتح صفحة التصويت</a>
       </div>
     </header>
@@ -44,6 +45,7 @@
       <button role="tab" id="t-review" aria-controls="tab-review" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#list-checks"/></svg>المراجعة<span class="count" id="review-count" hidden></span></button>
       <button role="tab" id="t-teachers" aria-controls="tab-teachers" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#chalkboard-teacher"/></svg>المعلّمون</button>
       <button role="tab" id="t-qr" aria-controls="tab-qr" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#qr-code"/></svg>الباركود</button>
+      <button role="tab" id="t-pearls" aria-controls="tab-pearls" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#list-checks"/></svg>اللؤلؤ</button>
       <button role="tab" id="t-settings" aria-controls="tab-settings" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#gear"/></svg>الإعدادات</button>
     </div>
 
@@ -74,9 +76,9 @@
         <form class="stack" id="add-form">
           <h2 style="font-size:var(--t-h3)">أضف معلّمين</h2>
           <div class="field">
-            <label for="add-names">الأسماء الكاملة، اسم في كل سطر</label>
-            <textarea class="textarea" id="add-names" spellcheck="false" aria-describedby="add-hint"></textarea>
-            <p class="hint" id="add-hint">اكتب الاسم الثلاثي إن أمكن؛ كلّما كان الاسم أكمل كانت المطابقة أدقّ.</p>
+            <label for="add-names">الأسماء الكاملة مع المادة، معلّم في كل سطر</label>
+            <textarea class="textarea" id="add-names" spellcheck="false" aria-describedby="add-hint" placeholder="محمد صالح العنزي | رياضيات"></textarea>
+            <p class="hint" id="add-hint">اكتب المادة بعد علامة | لتظهر جزيرتها في الرحلة. اكتب الاسم الثلاثي إن أمكن؛ كلّما كان أكمل كانت المطابقة أدقّ.</p>
           </div>
           <p class="error" id="add-error" role="alert" hidden></p>
           <button class="btn btn-primary" type="submit">أضف المعلّمين</button>
@@ -125,6 +127,29 @@
     </section>
 
     <!-- الإعدادات -->
+    <section id="tab-pearls" role="tabpanel" aria-labelledby="t-pearls" hidden>
+      <div class="split">
+        <form class="stack" id="q-form" novalidate>
+          <h2>سؤال جديد للغوص</h2>
+          <p class="sec">في الرحلة يغوص الطالب ويجيب ثلاثة أسئلة من مادته؛ كل إجابة صحيحة لؤلؤة يهديها لمعلّمه. الأسئلة لا تغيّر صوته.</p>
+          <div class="field"><label for="q-subject">المادة</label><input class="input" id="q-subject" list="q-subjects" maxlength="40" autocomplete="off"><datalist id="q-subjects"></datalist></div>
+          <div class="field"><label for="q-text">السؤال</label><input class="input" id="q-text" maxlength="200" autocomplete="off"></div>
+          <fieldset class="field qchoices">
+            <legend class="label">الخيارات (حدّد الصحيح)</legend>
+            <label class="qchoice"><input type="radio" name="q-answer" value="0" checked><input class="input" id="q-c0" maxlength="80" aria-label="الخيار الأول"></label>
+            <label class="qchoice"><input type="radio" name="q-answer" value="1"><input class="input" id="q-c1" maxlength="80" aria-label="الخيار الثاني"></label>
+            <label class="qchoice"><input type="radio" name="q-answer" value="2"><input class="input" id="q-c2" maxlength="80" aria-label="الخيار الثالث"></label>
+          </fieldset>
+          <p class="error" id="q-error" role="alert" hidden></p>
+          <button class="btn btn-primary" type="submit">أضف السؤال</button>
+        </form>
+        <div>
+          <div class="section-head"><h2>بنك الأسئلة</h2><p class="meta" id="q-count"></p></div>
+          <div class="panel" id="q-list"></div>
+        </div>
+      </div>
+    </section>
+
     <section id="tab-settings" role="tabpanel" aria-labelledby="t-settings" hidden>
       <div class="settings">
         <section>

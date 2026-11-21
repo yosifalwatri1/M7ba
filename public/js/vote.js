@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  const views = ['form', 'choose', 'done', 'already', 'closed', 'error'];
+  const views = ['intro', 'form', 'choose', 'done', 'already', 'closed', 'error'];
   const show = (name) => {
     for (const v of views) $('view-' + v).hidden = v !== name;
     FX.enter($('view-' + name));
@@ -124,6 +124,7 @@
   $('reason').addEventListener('input', () => { $('reason-count').textContent = $('reason').value.length + '/300'; });
 
   $('none').addEventListener('click', () => submit({ name: $('typed').textContent, force: true }, $('choose-error')));
+  $('go-quick').addEventListener('click', () => { show('form'); input.focus(); });
   $('back').addEventListener('click', () => { show('form'); input.focus(); });
 
   (async () => {
@@ -133,7 +134,9 @@
       if (s.title) { $('title').textContent = s.title; document.title = s.title; }
       if (s.voted) return show('already');
       if (!s.open) return show('closed');
-      show('form');
+      // الرحلة ثلاثية الأبعاد إن كان الجهاز يدعمها، وإلا التصويت السريع مباشرة
+      const gl = (() => { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch { return false; } })();
+      if (gl && !new URLSearchParams(location.search).has('quick')) show('intro'); else show('form');
     } catch {
       show('error');
     }

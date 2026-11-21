@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#1d4577">
+  <meta name="robots" content="noindex">
+  <title>نجمك يا معلّم</title>
+  <link rel="preload" href="/fonts/noto-kufi-arabic-arabic-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="modulepreload" href="/vendor/three.module.min.js">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="importmap">{ "imports": { "three": "/vendor/three.module.min.js" } }</script>
+</head>
+<body class="play">
+  <canvas id="world" aria-label="مشهد ثلاثي الأبعاد لبحر الكويت وأبراجها"></canvas>
+  <div id="labels" class="labels"></div>
+
+  <header class="hud">
+    <span class="school" id="school"></span>
+    <ol id="steps" class="steps" aria-label="مراحل الرحلة">
+      <li>الميناء</li><li>الجزيرة</li><li>النجم</li><li>الرسالة</li><li>الوصول</li>
+    </ol>
+    <a class="link" href="/?quick=1">تصويت سريع</a>
+  </header>
+
+  <section class="dock" id="dock" aria-live="polite"></section>
+
+  <div class="dive" id="dive" hidden>
+    <div class="bubbles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="dive-in"></div>
+  </div>
+
+  <div class="loading" id="loading">
+    <p class="eyebrow">نجمك يا معلّم</p>
+    <p class="display">نجهّز البحر…</p>
+  </div>
+  <canvas id="fx" aria-hidden="true"></canvas>
+  <script src="/vendor/motion.js" defer></script>
+  <script src="/vendor/confetti.js" defer></script>
+  <script type="module" src="/js/play.js"></script>
+</body>
+</html>

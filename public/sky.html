@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1d4577">
+  <meta name="robots" content="noindex">
+  <title>سماء المدرسة</title>
+  <link rel="preload" href="/fonts/noto-kufi-arabic-arabic-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="modulepreload" href="/vendor/three.module.min.js">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="importmap">{ "imports": { "three": "/vendor/three.module.min.js" } }</script>
+</head>
+<body class="play sky-screen">
+  <canvas id="world" aria-label="سماء المدرسة: كل معلّم نجم يكبر نوره بعدد أصواته"></canvas>
+  <div id="labels" class="labels"></div>
+  <header class="sky-head">
+    <div>
+      <p class="eyebrow" id="school">سماء المدرسة</p>
+      <h1 class="display">نجمك يا معلّم</h1>
+      <p class="sec" id="total"></p>
+    </div>
+    <div class="sky-acts">
+      <button class="btn btn-primary" id="ceremony" type="button">ابدأ الإعلان</button>
+      <button class="btn" id="full" type="button">ملء الشاشة</button>
+    </div>
+  </header>
+  <p class="lantern" id="lantern" aria-live="polite"></p>
+  <div class="reveal" id="reveal" hidden>
+    <p class="eyebrow">المعلّم الأكثر أثراً</p>
+    <p class="display" id="reveal-name"></p>
+    <p id="reveal-meta"></p>
+  </div>
+  <canvas id="fx" aria-hidden="true"></canvas>
+  <script src="/vendor/confetti.js" defer></script>
+  <script type="module" src="/js/sky.js"></script>
+</body>
+</html>
