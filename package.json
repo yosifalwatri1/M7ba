@@ -8,8 +8,12 @@
     "start": "node server.js",
     "test": "node --test"
   },
-  "engines": { "node": ">=22.13" },
+  "engines": {
+    "node": "22.x"
+  },
   "dependencies": {
+    "@electric-sql/pglite": "^0.5.17",
+    "pg": "^8.23.1",
     "qrcode": "^1.5.4"
   }
 }
