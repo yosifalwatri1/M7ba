@@ -134,9 +134,8 @@
       if (s.title) { $('title').textContent = s.title; document.title = s.title; }
       if (s.voted) return show('already');
       if (!s.open) return show('closed');
-      // الرحلة ثلاثية الأبعاد إن كان الجهاز يدعمها، وإلا التصويت السريع مباشرة
-      const gl = (() => { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch { return false; } })();
-      if (gl && !new URLSearchParams(location.search).has('quick')) { location.replace('/play'); return; }
+      // لعبة البكسل تعمل على كل الأجهزة؛ ‎?quick‎ يفتح التصويت السريع مباشرة
+      if (!new URLSearchParams(location.search).has('quick')) { location.replace('/play'); return; }
       show('form');
     } catch {
       show('error');

@@ -23,6 +23,7 @@ function serveStatic(req, res, pathname) {
   if (rel === '/admin' || rel === '/admin/') rel = '/admin.html';
   if (rel === '/about' || rel === '/about/') rel = '/about.html';
   if (rel === '/play' || rel === '/play/') rel = '/play.html';
+  if (rel === '/play3d' || rel === '/play3d/') rel = '/play3d.html';
   if (rel === '/sky' || rel === '/sky/') rel = '/sky.html';
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
   if (!file.startsWith(PUBLIC_DIR + path.sep)) { res.writeHead(403); res.end(); return; }

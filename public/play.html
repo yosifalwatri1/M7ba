@@ -3,51 +3,48 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#1d4577">
+  <meta name="theme-color" content="#2a1f33">
   <meta name="robots" content="noindex">
   <title>نجمك يا معلّم</title>
+  <link rel="preload" href="/fonts/press-start-2p-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/noto-kufi-arabic-arabic-600-normal.woff2" as="font" type="font/woff2" crossorigin>
-  <link rel="modulepreload" href="/vendor/three.module.min.js">
   <link rel="stylesheet" href="/css/app.css">
-  <script type="importmap">{ "imports": { "three": "/vendor/three.module.min.js" } }</script>
+  <link rel="stylesheet" href="/css/pixel.css">
 </head>
-<body class="play">
-  <canvas id="world" aria-label="مشهد ثلاثي الأبعاد لبحر الكويت وأبراجها"></canvas>
-  <div id="labels" class="labels"></div>
+<body class="px">
+  <canvas id="screen" aria-label="لعبة بكسل: كورنيش الكويت وقت الغروب وأبراج الكويت"></canvas>
+  <div id="labels" class="px-labels"></div>
+  <div class="crt" aria-hidden="true"></div>
 
-  <header class="hud">
-    <span class="school" id="school"></span>
-    <ol id="steps" class="steps" aria-label="مراحل الرحلة">
-      <li>النوخذة</li><li>الاستكشاف</li><li>النجم</li><li>الرسالة</li><li>الوصول</li>
-    </ol>
-    <a class="link" href="/?quick=1">تصويت سريع</a>
+  <header class="px-hud">
+    <div><span class="px-num" id="hud-score">0000</span><small id="hud-school">نقاط</small></div>
+    <div class="mid"><span class="px-num" id="hud-stage">KW 1-1</span><small id="hud-stage-name">الكورنيش</small></div>
+    <div><span class="px-num" id="hud-time">00:00</span><small><a href="/?quick=1">تصويت سريع</a></small></div>
   </header>
 
-  <section class="dock" id="dock" aria-live="polite"></section>
-
-  <div class="dive" id="dive" hidden>
-    <div class="bubbles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-    <div class="dive-in"></div>
+  <div class="px-title" id="title" hidden>
+    <p class="px-kicker">مبادرة معلّمي المفضّل</p>
+    <h1>نجمك يا معلّم</h1>
+    <p class="px-start">اضغط للبدء</p>
   </div>
 
-  <div class="spy" id="spy" aria-hidden="true"></div>
+  <section class="px-dlg" id="dlg" hidden aria-live="polite"></section>
 
-  <!-- المشهد السينمائي -->
-  <div class="cine" id="cine" hidden>
-    <div class="cine-bar top"></div>
-    <div class="cine-bar bottom"></div>
-    <p class="cine-cap" id="cine-cap" aria-live="polite"></p>
-    <button class="link cine-skip" id="cine-skip" type="button">تخطَّ المشهد</button>
-    <div class="cine-fade" id="cine-fade"></div>
+  <div class="px-pad" id="pad" hidden>
+    <button class="px-key" id="pad-right" type="button" aria-label="امشِ يميناً" dir="ltr">▶</button>
+    <button class="px-key a" id="pad-a" type="button" aria-label="زر الاختيار">A</button>
+    <button class="px-key" id="pad-left" type="button" aria-label="امشِ يساراً" dir="ltr">◀</button>
   </div>
 
-  <div class="loading" id="loading">
-    <p class="eyebrow">نجمك يا معلّم</p>
-    <p class="display">نجهّز البحر…</p>
+  <div class="px-clear" id="clear" hidden>
+    <p class="px-num big">STAGE CLEAR</p>
+    <h2>أضأت نجم <span id="clear-name"></span></h2>
+    <p id="clear-sub"></p>
+    <p class="px-num">SCORE <span id="clear-score">0000</span></p>
+    <a class="px-btn" href="/about">عن المبادرة</a>
   </div>
-  <canvas id="fx" aria-hidden="true"></canvas>
-  <script src="/vendor/motion.js" defer></script>
-  <script src="/vendor/confetti.js" defer></script>
-  <script type="module" src="/js/play.js"></script>
+
+  <div class="px-loading" id="loading"><span class="px-num">LOADING…</span></div>
+  <script type="module" src="/js/pixel/game.js"></script>
 </body>
 </html>
