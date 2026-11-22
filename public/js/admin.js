@@ -207,7 +207,7 @@
         el('div', { class: 'row' },
           el('span', { class: 'rank num' + (r.votes && r.rank <= 3 ? ' r' + r.rank : ''), 'aria-label': r.votes ? `المركز ${r.rank}` : 'بلا أصوات' },
             !r.votes ? '–' : String(r.rank)),
-          el('span', { class: 'tname' }, r.name, r.subject || r.pearls ? el('span', { class: 'meta tmeta' }, [r.subject, r.pearls ? `${r.pearls} لؤلؤة` : ''].filter(Boolean).join(' · ')) : null),
+          el('span', { class: 'tname' }, r.name, r.subject || r.pearls ? el('span', { class: 'meta tmeta' }, [r.subject, r.pearls ? `${r.pearls} بطاقة ذهبية` : ''].filter(Boolean).join(' · ')) : null),
           el('span', { class: 'bar', role: 'presentation' }, el('i', { 'data-w': (r.votes / max) * 100, style: `width:${first ? 0 : (r.votes / max) * 100}%` })),
           el('span', { class: 'votes' }, votesWord(r.votes).replace(/^0 صوتاً$/, 'لا أصوات')),
           el('span', { class: 'share num' }, r.pct + '%')),

@@ -36,13 +36,21 @@ body.px {
 .px-tag.near small { color: #2a1f33; }
 .px-tag.star { padding: 2px 6px; font-size: 12px; background: rgba(42,31,51,.85); border-width: 1px; }
 .px-tag.star.near { background: var(--px-gold); color: #2a1f33; }
+.px-tag.plate { background: #f6efe0; color: #2a1f33; border-color: #2a1f33; padding: 2px 8px; }
+.px-tag.plate b { font-size: 12px; }
+.px-tag.plate.near { background: var(--px-gold); }
+.px-tag.exit { border-color: var(--px-green); color: var(--px-green); }
+.px-tag.open { border-color: var(--px-green); }
+.px-tag.target { animation: px-bob .7s steps(2) infinite; border-color: var(--px-gold); }
+@keyframes px-bob { 50% { margin-top: -4px; } }
 .px-tag.star.picked { background: #fff; color: #2a1f33; border-color: var(--px-gold); }
 
 /* صندوق الحوار */
 .px-dlg { position: fixed; inset: auto 10px calc(96px + env(safe-area-inset-bottom)); z-index: 5; max-width: 560px; margin: 0 auto;
   background: var(--px-bg); border: 3px solid var(--px-line); box-shadow: inset 0 0 0 3px var(--px-bg), inset 0 0 0 5px #6b5578, 5px 5px 0 #000a;
   padding: 14px 16px 12px; max-height: 52dvh; overflow-y: auto; font-family: var(--font); }
-.px-dlg.top { inset: calc(66px + env(safe-area-inset-top)) 10px auto; max-height: 34dvh; }
+.px-dlg.low { bottom: calc(12px + env(safe-area-inset-bottom)); }
+.px-dlg.top { inset: calc(84px + env(safe-area-inset-top)) 10px auto; max-height: 34dvh; }
 /* الشاشات العريضة: الحوار في الزاوية اليسرى؛ النوخذة في الوسط والأكشاك تأتي من اليمين */
 @media (min-width: 900px) and (min-aspect-ratio: 4/3) { .px-dlg { inset: auto auto 96px 16px; width: min(440px, 38vw); margin: 0; } }
 .px-who { margin: 0 0 6px; color: var(--px-gold); font-weight: 600; font-size: 13px; }
@@ -72,9 +80,20 @@ body.px {
 .px-input { width: 100%; box-sizing: border-box; min-height: 44px; padding: 8px 10px; background: #1c1424; color: var(--px-ink); border: 2px solid #6b5578; border-radius: 0; font: 15px var(--font); resize: none; }
 .px-input:focus { outline: 2px solid var(--px-gold); }
 .px-count { display: block; text-align: end; font-size: 11px; color: var(--px-dim); margin-top: 2px; }
-.px-pearls { display: flex; gap: 6px; margin: 0 0 8px; }
-.px-pearls span { width: 16px; height: 16px; border: 2px dashed #8f7b98; }
-.px-pearls span.got { border: 0; background: #fffaf0; box-shadow: inset -4px -4px 0 #d8d2c4, 0 0 0 2px #fff; }
+.px-slots { display: flex; gap: 6px; margin: 0 0 8px; }
+.px-slots span { width: 14px; height: 18px; border: 2px dashed #8f7b98; }
+.px-slots span.got { border: 2px solid #2a1f33; background: #f3e7d3; box-shadow: 0 0 0 2px #fff; }
+.px-slots span.gold { border: 2px solid #2a1f33; background: var(--px-gold); box-shadow: 0 0 0 2px #fff; }
+
+/* البطاقات في الشريط العلوي */
+.px-cards { display: flex; gap: 3px; min-height: 0; }
+.px-cards i { width: 10px; height: 14px; background: #f3e7d3; border: 2px solid #2a1f33; box-shadow: inset 0 3px 0 var(--c), 2px 2px 0 #000a; }
+.px-cards i.gold { background: var(--px-gold); box-shadow: inset 0 2px 0 #f6d79a, 2px 2px 0 #000a; }
+
+/* السبّورة: السؤال بالطبشور */
+.px-board { position: fixed; z-index: 2; box-sizing: border-box; display: grid; place-content: center; gap: 6px; padding: 10px 14px; text-align: center;
+  color: #f4f1e6; font-family: var(--display); font-weight: 600; font-size: clamp(15px, 4.4vw, 24px); line-height: 1.6; text-shadow: 0 0 2px #ffffff55; overflow: hidden; }
+.px-board small { font-family: var(--font); font-size: 12px; color: #d9e8c8; opacity: .85; }
 
 /* أزرار التحكّم */
 .px-pad { position: fixed; inset: auto 10px max(10px, env(safe-area-inset-bottom)); z-index: 5; display: flex; justify-content: space-between; align-items: center; pointer-events: none; }
@@ -99,4 +118,4 @@ body.px {
 .px-clear h2 { margin: 6px 0 0; font-family: var(--display); font-size: clamp(22px, 6vw, 36px); line-height: 1.5; text-shadow: 3px 3px 0 #000; }
 .px-clear p { margin: 0; color: var(--px-dim); }
 .px-loading { position: fixed; inset: 0; z-index: 8; display: grid; place-content: center; background: #2a1f33; color: var(--px-gold); }
-@media (prefers-reduced-motion: reduce) { .px-start { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .px-start, .px-tag.target { animation: none; } }

@@ -45,7 +45,7 @@
       <button role="tab" id="t-review" aria-controls="tab-review" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#list-checks"/></svg>المراجعة<span class="count" id="review-count" hidden></span></button>
       <button role="tab" id="t-teachers" aria-controls="tab-teachers" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#chalkboard-teacher"/></svg>المعلّمون</button>
       <button role="tab" id="t-qr" aria-controls="tab-qr" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#qr-code"/></svg>الباركود</button>
-      <button role="tab" id="t-pearls" aria-controls="tab-pearls" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#list-checks"/></svg>اللؤلؤ</button>
+      <button role="tab" id="t-pearls" aria-controls="tab-pearls" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#list-checks"/></svg>الأسئلة</button>
       <button role="tab" id="t-settings" aria-controls="tab-settings" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#gear"/></svg>الإعدادات</button>
     </div>
 
@@ -130,8 +130,8 @@
     <section id="tab-pearls" role="tabpanel" aria-labelledby="t-pearls" hidden>
       <div class="split">
         <form class="stack" id="q-form" novalidate>
-          <h2>سؤال جديد للغوص</h2>
-          <p class="sec">في الرحلة يغوص الطالب ويجيب ثلاثة أسئلة من مادته؛ كل إجابة صحيحة لؤلؤة يهديها لمعلّمه. الأسئلة لا تغيّر صوته.</p>
+          <h2>سؤال جديد للفصل</h2>
+          <p class="sec">في اللعبة يدخل الطالب المدرسة ويجيب ثلاثة أسئلة على سبّورة فصل مادته؛ كل إجابة بطاقة يفتح بها كشك المادة، والصحيحة بطاقة ذهبية يهديها لمعلّمه. الأسئلة لا تغيّر صوته، ولا تمنعه من التصويت.</p>
           <div class="field"><label for="q-subject">المادة</label><input class="input" id="q-subject" list="q-subjects" maxlength="40" autocomplete="off"><datalist id="q-subjects"></datalist></div>
           <div class="field"><label for="q-text">السؤال</label><input class="input" id="q-text" maxlength="200" autocomplete="off"></div>
           <fieldset class="field qchoices">
