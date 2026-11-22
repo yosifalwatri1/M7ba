@@ -247,9 +247,8 @@ export function makeDhow() {
   mast.position.set(0, 4.4, -0.9); mast.rotation.x = 0.14; g.add(mast);
   const yard = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.07, 11, 6), wood);
   // الشراع اللاتيني: رباعي مائل، أعلاه على العارضة
-  const A = new THREE.Vector3(0, 1.9, -4.4), Bp = new THREE.Vector3(0, 8.6, 3.2), C = new THREE.Vector3(0, 1.75, 2.6), D = new THREE.Vector3(0, 1.6, -3.4);
+  const A = new THREE.Vector3(0, 1.9, -4.4), Bp = new THREE.Vector3(0, 8.6, 3.2), C = new THREE.Vector3(0, 3.1, 1.5), D = new THREE.Vector3(0, 1.7, -3.4);   // الشراع فوق رأس النوخذة
   yard.position.copy(A.clone().add(Bp).multiplyScalar(0.5));
-  yard.lookAt(Bp.clone().add(g.position)); yard.rotateX(Math.PI / 2);
   yard.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), Bp.clone().sub(A).normalize());
   yard.scale.y = A.distanceTo(Bp) / 11 * 1.08;
   g.add(yard);
@@ -268,7 +267,7 @@ export function makeDhow() {
   g.userData.mastTop = new THREE.Vector3(0, 8.2, -0.4);
   // فانوس على المؤخرة
   const lamp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), blending: THREE.AdditiveBlending, depthWrite: false }));
-  lamp.scale.setScalar(2.2); lamp.position.set(0, 2.6, 4.2); g.add(lamp);
+  lamp.material.opacity = 0.6; lamp.scale.setScalar(0.7); lamp.position.set(0, 2.1, 4.45); g.add(lamp);
   return g;
 }
 

@@ -18,7 +18,7 @@
   <header class="hud">
     <span class="school" id="school"></span>
     <ol id="steps" class="steps" aria-label="مراحل الرحلة">
-      <li>الميناء</li><li>الجزيرة</li><li>النجم</li><li>الرسالة</li><li>الوصول</li>
+      <li>النوخذة</li><li>الاستكشاف</li><li>النجم</li><li>الرسالة</li><li>الوصول</li>
     </ol>
     <a class="link" href="/?quick=1">تصويت سريع</a>
   </header>
@@ -28,6 +28,17 @@
   <div class="dive" id="dive" hidden>
     <div class="bubbles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
     <div class="dive-in"></div>
+  </div>
+
+  <div class="spy" id="spy" aria-hidden="true"></div>
+
+  <!-- المشهد السينمائي -->
+  <div class="cine" id="cine" hidden>
+    <div class="cine-bar top"></div>
+    <div class="cine-bar bottom"></div>
+    <p class="cine-cap" id="cine-cap" aria-live="polite"></p>
+    <button class="link cine-skip" id="cine-skip" type="button">تخطَّ المشهد</button>
+    <div class="cine-fade" id="cine-fade"></div>
   </div>
 
   <div class="loading" id="loading">

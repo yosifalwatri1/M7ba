@@ -590,3 +590,50 @@ body.play { overflow: hidden; height: 100dvh; overscroll-behavior: none; }
 .reveal .eyebrow { font-size: clamp(1rem, 1.6vw, 1.4rem); }
 #reveal-meta { font-size: clamp(1rem, 1.8vw, 1.5rem); color: var(--text-2); }
 @media (prefers-reduced-motion: no-preference) { .reveal:not([hidden]) { animation: rise 1s var(--ease) both; } }
+
+/* ---------- المشهد السينمائي ---------- */
+.cine { position: fixed; inset: 0; z-index: 7; pointer-events: none; }
+.cine-bar { position: absolute; inset-inline: 0; height: 12dvh; background: #050b16; transition: transform 900ms var(--ease); }
+.cine-bar.top { top: 0; transform: translateY(-100%); }
+.cine-bar.bottom { bottom: 0; transform: translateY(100%); }
+.cine.on .cine-bar { transform: none; }
+.cine-cap { position: absolute; inset: auto var(--gutter) calc(12dvh + 1.75rem); text-align: center; margin: 0;
+  font-family: var(--display); font-weight: 600; font-size: clamp(1.4rem, 5.6vw, 2.4rem); line-height: 1.5; color: var(--text);
+  text-shadow: 0 2px 18px rgba(5, 11, 22, 0.9); opacity: 0; transform: translateY(10px); transition: opacity 700ms var(--ease), transform 700ms var(--ease); }
+.cine-cap.show { opacity: 1; transform: none; }
+.cine-cap b { color: var(--gold); font-weight: 600; }
+.cine-cap.big { inset-block-end: calc(12dvh + 1rem); display: grid; gap: 0.5rem; }
+.cine-title { display: block; font-size: clamp(2.6rem, 12vw, 5.5rem); line-height: 1.3; color: var(--text); }
+.cine-sub { display: block; font-family: var(--font); font-weight: 400; font-size: clamp(1rem, 4vw, 1.4rem); color: var(--text-2); }
+.cine-skip { position: absolute; inset: auto var(--gutter) calc(12dvh - 3rem) auto; pointer-events: auto; color: var(--text-2); }
+.cine-fade { position: absolute; inset: 0; background: #050b16; opacity: 0; transition: opacity 240ms linear; }
+.cine-fade.on { opacity: 1; }
+
+/* ---------- تجهيز النوخذة ---------- */
+.opt-row { display: grid; grid-template-columns: 4.5rem minmax(0, 1fr); align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-top: 1px solid var(--line); }
+.opt-row:first-of-type { border-top: 0; }
+.opt-label { font-size: var(--t-sec); color: var(--text-2); font-weight: 500; }
+.opt-items { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+.swatch.sm { width: 40px; height: 40px; }
+.opt-text { min-height: 40px; padding: 0 0.875rem; border-radius: var(--r); background: none; border: 1.5px solid var(--line-strong);
+  color: var(--text); font-size: var(--t-sec); font-weight: 500; cursor: pointer; }
+.opt-text[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); background: var(--gold-wash); }
+
+/* ---------- الدفّة ---------- */
+.steer-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 0.5rem auto 0.25rem; }
+.steer { width: 72px; height: 60px; border-radius: 14px; border: 1.5px solid var(--line-strong); background: rgba(243, 239, 228, 0.06);
+  color: var(--text); font-size: 2.4rem; line-height: 1; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; }
+.steer:active { background: var(--gold); color: var(--night); border-color: var(--gold); }
+.steer-hint { font-size: var(--t-meta); color: var(--text-3); }
+.search-row { display: flex; gap: 0.5rem; align-items: stretch; }
+.search-row .input { flex: 1; min-width: 0; margin: 0; }
+.search-row .btn { flex: none; min-height: 50px; }
+.search-row .btn[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); }
+
+/* ---------- المنظار ---------- */
+.spy { position: fixed; inset: 0; z-index: 1; pointer-events: none; opacity: 0; transition: opacity 500ms var(--ease);
+  background: radial-gradient(circle at 50% 32%, transparent 0 34vmin, rgba(233, 180, 76, 0.55) 34vmin 34.6vmin, rgba(6, 16, 34, 0.82) 35vmin); }
+.spy.on { opacity: 1; }
+.tag.near .tag-name { color: var(--gold); font-size: 1.15rem; }
+.tag-faint .tag-name { opacity: 0.55; }
+.tag.near.tag-faint .tag-name { opacity: 1; }
