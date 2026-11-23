@@ -1,10 +1,10 @@
-/* «المعلّم النجم» بأسلوب البكسل: مشي على كورنيش الكويت وقت الغروب
-   KW 1-1 الكورنيش: أكشاك المواد مقفلة، والمدرسة أول الشارع
+/* «المعلّم النجم» بأسلوب البكسل: مشي على شارع الخليج وقت الغروب
+   KW 1-1 شارع الخليج: المدرسة أول الشارع، ثم مركز جابر الثقافي
    KW 1-2 المدرسة: ممرّ بأبواب الفصول؛ في الفصل أسئلة على السبّورة، وكل إجابة بطاقة (الصحيحة ذهبية)
-   ← تُسلَّم البطاقات لكشك المادة فينفتح ← KW 1-3 نجوم الليل ← KW 1-4 الرسالة ← وصل ترشيحك */
+   ← KW 1-3 دائرة الأقسام: تُسلَّم البطاقات لقسم المادة فينفتح ← KW 1-4 نجوم الليل ← KW 1-5 الكتاب ← وصل ترشيحك */
 import { createScene } from './scene.js';
 import { playerFrames, booth, starSprite, LOOKS, rng } from './art.js';
-import { schoolFacade, shutter, cardSprite, createCorridor, createClassroom } from './school.js';
+import { schoolFacade, shutter, cardSprite, createCorridor, createClassroom, centreFacade, createRingHall } from './school.js';
 import { createRace } from './race.js';
 import { unlock, voice, sfx, ambience, engine, soundOn, setSound } from './audio.js';
 
@@ -55,12 +55,12 @@ const saved = (() => { try { return JSON.parse(localStorage.getItem('px-look') |
 const state = {
   mode: 'load', game: null, t: 0, look: { outfit: 'hoodie', head: 'hair', skin: LOOKS.skin[1], color: LOOKS.color[0], ...saved },
   subject: null, teacher: null, score: 0, scouted: new Set(), dusk: 0, start: 0,
-  cards: [], cardsFor: null, answers: {}, boothAnswers: {},
+  cards: [], cardsFor: null, answers: {}, boothAnswers: {}, words: [],
 };
 let frames = playerFrames(state.look);
 const player = { x: 40, dir: 1, walk: 0, moving: false, auto: null, cheer: false };
 const input = { left: false, right: false, a: false };
-let booths = [], school = null, hall = null, doors = [], room = null, streetEnd = 800, hallEnd = 600, stars = [], fx = [], flying = [], fade = 0;
+let booths = [], school = null, centre = null, ringHall = null, hall = null, doors = [], room = null, streetEnd = 800, hallEnd = 600, stars = [], fx = [], flying = [], fade = 0;
 
 const STREET = ['walk', 'title', 'intro', 'dress', 'busy'];
 const inHall = () => state.mode === 'school' || state.mode === 'hall-busy';
@@ -68,22 +68,26 @@ const endX = () => (inHall() ? hallEnd : streetEnd);
 
 function buildWorld() {
   if (!state.game) return;
-  // الكورنيش: المدرسة أول الشارع، ثم أكشاك المواد
+  // شارع الخليج: المدرسة أول الشارع، ثم مركز جابر الثقافي وفي داخله دائرة الأقسام
   const art = schoolFacade(H);
   school = { x: Math.round(W * 0.42 + art.img.width / 2 + 26), art };
+  const cart = centreFacade(H);
+  centre = { x: Math.round(school.x + art.img.width / 2 + Math.max(120, W * 0.55) + cart.img.width / 2), art: cart };
+  streetEnd = centre.x + W * 0.6;
+  // الأقسام: قسم لكل مادة، وقسم «كل المعلّمين»
   const list = [...state.game.subjects, { name: ALL, teachers: state.game.teachers, all: true }];
-  const gap = Math.max(150, Math.round(W * 0.75)), sh = shutter(H), first = school.x + art.img.width / 2 + Math.max(110, Math.round(W * 0.5));
+  const sh = shutter(260);
   booths = list.map((s, i) => {
     const color = s.all ? '#e9b44c' : COLORS[i % COLORS.length];
     const old = booths.find((b) => b.name === s.name);
-    return { ...s, color, x: Math.round(first + i * gap), img: booth(color, H, !!s.all), sh, u: Math.max(1, Math.round(H / 260)), open: old ? old.open : 0, shown: old ? old.shown : [] };
+    return { ...s, color, img: booth(color, 260, !!s.all), sh, u: 1, open: old ? old.open : 0, shown: old ? old.shown : [] };
   });
-  streetEnd = booths.length ? booths[booths.length - 1].x + W * 0.6 : 800;
+  ringHall = createRingHall(W, H, tall());
   // الممرّ: باب الخروج، ثم فصل لكل مادة، ثم المكتبة
   const hg = Math.max(140, Math.min(240, Math.round(W * 0.5)));
   hall = createCorridor(W, H, hg);
   const total = state.game.questions || 0;
-  const ds = [{ exit: true, name: 'الكورنيش', color: '#2f8f4e' },
+  const ds = [{ exit: true, name: 'شارع الخليج', color: '#2f8f4e' },
     ...state.game.subjects.map((s) => ({ name: s.name, subject: s.name, questions: s.questions, color: booths.find((b) => b.name === s.name).color })),
     { library: true, name: 'المكتبة', subject: '', questions: total, color: '#e9b44c' }];
   doors = ds.map((d, i) => ({ ...d, x: 60 + i * hg, img: hall.door(d.color, d.exit) }));
@@ -199,11 +203,23 @@ function loop(now) {
 }
 let ambLevel = -1;
 function update(dt) {
-  const amb = { walk: 1, busy: 1, intro: 1, dress: 1, night: 0.6, msg: 0.6, win: 0.6, school: 0.2, 'hall-busy': 0.2, class: 0.15, race: 0.5 }[state.mode] ?? 0;
+  const amb = { walk: 1, busy: 1, intro: 1, dress: 1, night: 0.6, msg: 0.6, win: 0.6, school: 0.2, 'hall-busy': 0.2, class: 0.15, race: 0.5, ring: 0.25, 'ring-busy': 0.25 }[state.mode] ?? 0;
   if (amb !== ambLevel) { ambLevel = amb; ambience(amb); }
   if (state.mode === 'race' && race) {
     race.update(dt, input);
     fx = fx.filter((p) => { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 40 * dt; return p.t < p.life; });
+    return;
+  }
+  // دائرة الأقسام: ◀ ▶ تدير الحلقة قسماً قسماً
+  if (state.mode === 'ring' || state.mode === 'ring-busy') {
+    if (state.mode === 'ring') {
+      if (input.left && !prevLR.l) turnRing(-1);
+      if (input.right && !prevLR.r) turnRing(1);
+    }
+    prevLR = { l: input.left, r: input.right };
+    ring.rot += (ring.target - ring.rot) * Math.min(1, dt * 7);
+    fx = fx.filter((p) => { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 40 * dt; return p.t < p.life; });
+    flying = flying.filter((f) => { f.t += dt; if (f.t >= f.dur) { f.done(); return false; } return true; });
     return;
   }
   const walkable = ['walk', 'night', 'school'].includes(state.mode);
@@ -234,6 +250,17 @@ function draw() {
     race.draw(g, state.t);
     for (const p of fx) { g.globalAlpha = clamp(1 - p.t / p.life, 0, 1); g.fillStyle = p.c; g.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); }
     g.globalAlpha = 1;
+    if (fade > 0) { g.fillStyle = `rgba(20,10,24,${fade})`; g.fillRect(0, 0, W, H); }
+    return;
+  }
+  if (state.mode === 'ring' || state.mode === 'ring-busy') {
+    drawRing();
+    for (const p of fx) { g.globalAlpha = clamp(1 - p.t / p.life, 0, 1); g.fillStyle = p.c; g.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); }
+    g.globalAlpha = 1;
+    for (const f of flying) {
+      const k = clamp(f.t / f.dur, 0, 1), e = 1 - (1 - k) * (1 - k);
+      g.drawImage(f.img, Math.round(f.x0 + (f.x1 - f.x0) * e - f.img.width / 2), Math.round(f.y0 + (f.y1 - f.y0) * e - Math.sin(k * Math.PI) * H * 0.08 - f.img.height / 2));
+    }
     if (fade > 0) { g.fillStyle = `rgba(20,10,24,${fade})`; g.fillRect(0, 0, W, H); }
     return;
   }
@@ -287,27 +314,57 @@ function drawStreet(gy) {
       } else hideTag('school');
     } else hideTag('school');
   }
-  // أكشاك المواد
-  for (const b of booths) {
-    const sx = Math.round(b.x - camX - b.img.width / 2), sy = base - b.img.height;
-    if (sx < -b.img.width || sx > W) { hideTag('b' + b.name); continue; }
-    g.drawImage(b.img, sx, sy);
-    // البطاقات المعروضة في نافذة الكشك بعد فتحه
-    b.shown.forEach((c, i) => { const img = c.gold ? cardGold1 : cardPlain1(b.color); g.drawImage(img, sx + (11 + i * 8) * b.u, sy + 20 * b.u); });
-    if (b.open < 1) {
-      const s = b.sh, hgt = Math.round(s.img.height * (1 - b.open));
-      if (hgt > 0) g.drawImage(s.img, 0, s.img.height - hgt, s.img.width, hgt, sx + s.x, sy + s.y, s.img.width, hgt);
-    }
-    if (state.mode === 'walk') {
-      const open = b.open >= 1, n = b.teachers.length;
-      const t2 = tag('b' + b.name, `<b>${b.name}</b><small>${open ? 'مفتوح' : 'مقفل'} · ${b.all ? 'أي معلّم' : teacherCount(n)}</small>`, b.all ? 'gold' : '');
-      t2.style.visibility = ''; t2.onclick = () => boothTap(b);
-      t2.classList.toggle('near', near === b);
-      t2.classList.toggle('target', fits(b) && near !== b);
-      t2.classList.toggle('open', open);
-      place(t2, b.x - camX, sy - Math.round(H * 0.015));
-    } else hideTag('b' + b.name);
+  // مركز جابر الثقافي
+  if (centre) {
+    const img = centre.art.img, sx = Math.round(centre.x - camX - img.width / 2), sy = base - img.height;
+    if (sx > -img.width && sx < W) {
+      g.drawImage(img, sx, sy);
+      if (labels) {
+        const t = tag('centre', '<b>مركز جابر الثقافي</b>', 'plate');
+        t.style.visibility = ''; t.classList.toggle('near', near === centre && state.mode === 'walk');
+        t.classList.toggle('target', state.mode === 'walk' && near !== centre && (state.cards.length > 0 || booths.some((x) => x.open >= 1)));
+        t.onclick = () => state.mode === 'walk' && (near === centre ? enterCentre() : goTo(centre.x));
+        place(t, centre.x - camX, sy + centre.art.sign.y + 2);
+      } else hideTag('centre');
+    } else hideTag('centre');
   }
+}
+/* ---------- دائرة الأقسام: الأقسام على حلقة حول الطالب، الأمامي أكبر ---------- */
+const ring = { rot: 0, target: 0, sel: 0 };
+const ringAngle = (i) => ring.rot + (Math.PI * 2 * i) / booths.length;
+function ringPos(i) {
+  const a = ringAngle(i), R = ringHall;
+  const depth = (Math.cos(a) + 1) / 2;                                    // ١ أمام، ٠ خلف
+  const sc = (0.45 + 0.75 * depth ** 3) * Math.max(1, Math.min(2, Math.max(H / 300, W / 320)));
+  return { x: R.cx + Math.sin(a) * R.rx, y: R.cy + Math.cos(a) * R.ry, sc, depth };
+}
+function drawRing() {
+  const R = ringHall;
+  g.drawImage(R.img, 0, 0);
+  // الطالب في وسط الدائرة والكاميرا عيناه: تدور الأقسام حوله
+  const items = booths.map((b, i) => ({ b, i, ...ringPos(i) }));
+  items.sort((p, q) => p.y - q.y).forEach((it) => {
+    const { b, x, y, sc, depth } = it;
+    const w = Math.round(b.img.width * sc), h = Math.round(b.img.height * sc), sx = Math.round(x - w / 2), sy = Math.round(y - h);
+    g.globalAlpha = 0.55 + 0.45 * depth;
+    g.drawImage(b.img, sx, sy, w, h);
+    b.shown.forEach((c, k) => { const img = c.gold ? cardGold1 : cardPlain1(b.color); g.drawImage(img, Math.round(sx + (11 + k * 8) * sc), Math.round(sy + 20 * sc), Math.round(img.width * sc), Math.round(img.height * sc)); });
+    if (b.open < 1) {
+      const s = b.sh, hh = Math.round(s.img.height * (1 - b.open));
+      if (hh > 0) g.drawImage(s.img, 0, s.img.height - hh, s.img.width, hh, Math.round(sx + s.x * sc), Math.round(sy + s.y * sc), Math.round(s.img.width * sc), Math.round(hh * sc));
+    }
+    g.globalAlpha = 1;
+    if (state.mode === 'ring') {
+      const front = it.i === ring.sel;
+      const t = tag('r' + b.name, `<b>${b.all ? 'كل المعلّمين' : 'قسم ' + b.name}</b>${front ? `<small>${b.open >= 1 ? 'مفتوح' : 'مقفل'}</small>` : ''}`, (b.all ? 'gold ' : '') + 'ring');
+      t.style.visibility = depth > 0.5 ? '' : 'hidden';
+      t.style.opacity = String(0.5 + 0.5 * depth);
+      t.style.zIndex = String(Math.round(depth * 10));
+      t.classList.toggle('near', front); t.classList.toggle('open', b.open >= 1); t.classList.toggle('target', !front && fits(b));
+      t.onclick = () => ringTap(it.i);
+      place(t, x, sy - 2);
+    } else hideTag('r' + b.name);
+  });
 }
 const cardCache = new Map();
 const cardPlain1 = (color) => { if (!cardCache.has(color)) cardCache.set(color, cardSprite(1, false, color)); return cardCache.get(color); };
@@ -322,7 +379,7 @@ function drawHall() {
     if (sx < -d.img.width || sx > W) { hideTag('d' + d.name); continue; }
     g.drawImage(d.img, sx, sy);
     if (state.mode === 'school') {
-      const t = tag('d' + d.name, d.exit ? '<b>خروج</b><small>إلى الكورنيش</small>' : d.library ? '<b>المكتبة</b><small>كل المواد</small>' : `<b>فصل ${d.name}</b>`, d.exit ? 'exit' : d.library ? 'gold' : '');
+      const t = tag('d' + d.name, d.exit ? '<b>خروج</b><small>إلى شارع الخليج</small>' : d.library ? '<b>المكتبة</b><small>كل المواد</small>' : `<b>فصل ${d.name}</b>`, d.exit ? 'exit' : d.library ? 'gold' : '');
       t.style.visibility = ''; t.classList.toggle('near', hallNear === d); t.onclick = () => doorTap(d);
       place(t, d.x - camX, sy - 4);
     } else hideTag('d' + d.name);
@@ -361,13 +418,13 @@ async function start() {
   unlock();
   state.mode = 'intro';
   camX = 0; player.x = -30; player.auto = W * 0.42; player.dir = 1;
-  setStage('KW 1-1', 'الكورنيش');
+  setStage('KW 1-1', 'شارع الخليج');
   const line = el('p', { class: 'px-line' });
   const next = pxBtn('التالي ▸', null, 'small');
   say(el('p', { class: 'px-who' }, 'الراوي'), line, el('div', { class: 'px-acts' }, next));
   const lines = ['لكل طالب كتاب، ولكل معلّم نجمة تنتظر من يضيئها.',
-    'أكشاك المواد على الكورنيش مقفلة، ومفاتيحها بطاقات من المدرسة. ادخل فصل مادتك، وجاوب، وخذ بطاقاتك.',
-    'سلّم البطاقات لكشك المادة لينفتح، ثم اختر نجم معلّمك، واكتب كلمتك في كتابك.'];
+    'أقسام المدرسة في دائرة الأقسام بمركز جابر الثقافي، وكلها مقفلة. مفاتيحها بطاقات تكسبها بالفوز في تحدّيات المدرسة.',
+    'افتح قسم مادتك، واختر أفضل معلّم عندك، واكتب كلمتك في كتابك.'];
   for (const l of lines) {
     let go; const p = new Promise((r) => { go = r; });
     next.onclick = go; onPress = go;
@@ -402,25 +459,29 @@ function dress() {
 }
 
 /* ======================================================================
-   KW 1-1: الكورنيش، المدرسة، وأكشاك المواد
+   KW 1-1: شارع الخليج، المدرسة، ومركز جابر الثقافي
    ====================================================================== */
 let near = null;
 const fits = (b) => state.cards.length > 0 && b.open < 1 && (b.all || b.name === state.cardsFor);
+const deptName = (b) => (b.all ? 'قسم كل المعلّمين' : `قسم ${b.name}`);
 function walk() {
   state.mode = 'walk';
-  setStage('KW 1-1', 'الكورنيش');
+  setStage('KW 1-1', 'شارع الخليج');
   showPad(true);
   near = undefined;
   scout();
 }
 function scout() {
   let now = null, bestD = Infinity;
-  if (school) { const d = Math.abs(school.x - player.x); if (d < school.art.img.width * 0.42) { now = school; bestD = d; } }
-  for (const b of booths) { const d = Math.abs(b.x - player.x); if (d < 42 * (H / 422) + 14 && d < bestD) { now = b; bestD = d; } }
+  for (const b of [school, centre]) {
+    if (!b) continue;
+    const d = Math.abs(b.x - player.x);
+    if (d < b.art.img.width * 0.42 && d < bestD) { now = b; bestD = d; }
+  }
   if (now === near) return;
   near = now;
   if (now === school) schoolDialog();
-  else if (now) boothDialog(now);
+  else if (now === centre) centreDialog();
   else streetDialog();
 }
 /** امشِ إلى مكان ثم افتح حواره */
@@ -431,79 +492,139 @@ async function goTo(x) {
   await walkTo(x);
   state.mode = 'walk'; near = undefined;
 }
+const opened = () => booths.filter((b) => b.open >= 1);
 function streetDialog() {
   const tb = targetBooth();
-  if (state.cards.length && tb && tb.open < 1) {
-    say(el('p', { class: 'px-who' }, 'KW 1-1 · الكورنيش'),
-      el('p', { class: 'px-line' }, `معك ${cardWord(state.cards.length)}. سلّمها لكشك ${tb.name} لينفتح.`),
-      el('div', { class: 'px-acts' }, pxBtn(`امشِ إلى كشك ${tb.name} (A)`, () => goTo(tb.x), 'go')));
-    onPress = () => goTo(tb.x);
-    return;
-  }
-  const opened = booths.filter((b) => b.open >= 1);
-  const list = el('div', { class: 'px-list', hidden: true }, booths.map((b) => pxBtn(b.name, () => goTo(b.x), 'small')));
-  say(el('p', { class: 'px-who' }, 'KW 1-1 · الكورنيش'),
-    el('p', { class: 'px-line' }, opened.length ? `كشك ${opened.map((b) => b.name).join(' و')} مفتوح. ادخله واختر معلّمك.` : 'امشِ بالأسهم ◀ ▶. الأكشاك مقفلة، ومفاتيحها بطاقات من المدرسة.'),
-    el('div', { class: 'px-acts' }, opened.length ? pxBtn(`امشِ إلى كشك ${opened[0].name} (A)`, () => goTo(opened[0].x), 'go') : pxBtn('امشِ إلى المدرسة (A)', () => goTo(school.x), 'go')),
-    el('button', { class: 'px-link', type: 'button', onclick: (e) => { list.hidden = !list.hidden; e.currentTarget.textContent = list.hidden ? 'أو امشِ إلى كشك من القائمة' : 'أخفِ القائمة'; } }, 'أو امشِ إلى كشك من القائمة'),
-    list);
-  onPress = opened.length ? () => goTo(opened[0].x) : () => goTo(school.x);
+  const toCentre = (state.cards.length && tb && tb.open < 1) || opened().length;
+  say(el('p', { class: 'px-who' }, 'KW 1-1 · شارع الخليج'),
+    el('p', { class: 'px-line' }, state.cards.length && tb && tb.open < 1 ? `معك ${cardWord(state.cards.length)}. سلّمها لـ${deptName(tb)} في دائرة الأقسام بمركز جابر الثقافي.`
+      : opened().length ? `${deptName(opened()[0])} مفتوح في مركز جابر الثقافي. ادخل واختر أفضل معلّم عندك.`
+        : 'امشِ بالأسهم ◀ ▶. أقسام المدرسة في مركز جابر الثقافي، وكلها مقفلة. ابدأ من المدرسة واكسب مفاتيحها.'),
+    el('div', { class: 'px-acts' }, toCentre ? pxBtn('امشِ إلى مركز جابر الثقافي (A)', () => goTo(centre.x), 'go') : pxBtn('امشِ إلى المدرسة (A)', () => goTo(school.x), 'go')));
+  onPress = toCentre ? () => goTo(centre.x) : () => goTo(school.x);
 }
 function schoolDialog() {
   const tb = targetBooth(), name = state.game.school || 'المدرسة';
   if (state.cards.length && tb && tb.open < 1) {
     say(el('p', { class: 'px-who' }, name),
       el('p', { class: 'px-big' }, `معك ${cardWord(state.cards.length)}`),
-      el('p', { class: 'px-line' }, `سلّمها لكشك ${tb.name} على الكورنيش لينفتح.`),
-      el('div', { class: 'px-acts' }, pxBtn(`امشِ إلى كشك ${tb.name} (A)`, () => goTo(tb.x), 'go'), pxBtn('ادخل المدرسة', enterSchool)));
-    onPress = () => goTo(tb.x);
+      el('p', { class: 'px-line' }, `سلّمها لـ${deptName(tb)} في دائرة الأقسام بمركز جابر الثقافي.`),
+      el('div', { class: 'px-acts' }, pxBtn('امشِ إلى المركز (A)', () => goTo(centre.x), 'go'), pxBtn('ادخل المدرسة', enterSchool)));
+    onPress = () => goTo(centre.x);
     return;
   }
   say(el('p', { class: 'px-who' }, 'المدرسة'),
     el('p', { class: 'px-big' }, name),
-    el('p', { class: 'px-line' }, 'ادخل، واختر فصل مادتك، وجاوب أسئلة السبّورة. كل إجابة بطاقة، والصحيحة ذهبية.'),
+    el('p', { class: 'px-line' }, 'ادخل، واختر فصل مادتك، واسبق «الغش» و«الكسل» في تحدّي المادة. الفوز يعطيك بطاقات تفتح قسمها.'),
     el('div', { class: 'px-acts' }, pxBtn('ادخل المدرسة (A)', enterSchool, 'go')));
   onPress = enterSchool;
 }
-function boothDialog(b) {
-  if (!state.scouted.has(b.name)) { state.scouted.add(b.name); state.score += 100; setScore(); }
-  const names = shuffle(b.teachers).slice(0, 4).map((t) => t.name);
-  const who = b.all ? 'من هنا ترى سماء المدرسة كلها، وفيها كل المعلّمين.' : `${teacherCount(b.teachers.length)}: ${names.join('، ')}${b.teachers.length > 4 ? '…' : ''}`;
-  const title = b.all ? 'كشك كل المعلّمين' : `كشك ${b.name}`;
-  if (b.open >= 1) {
-    say(el('p', { class: 'px-who' }, 'الكشك مفتوح'), el('p', { class: 'px-big' }, title), el('p', { class: 'px-line' }, who),
-      el('div', { class: 'px-acts' }, pxBtn('اختر معلّمك تحت النجوم (A)', () => toNight(b), 'go')));
-    onPress = () => toNight(b);
-  } else if (fits(b)) {
-    say(el('p', { class: 'px-who' }, 'الكشك مقفل'), el('p', { class: 'px-big' }, title), el('p', { class: 'px-line' }, who),
-      el('div', { class: 'px-acts' }, pxBtn(`سلّم ${cardWord(state.cards.length)} (A)`, () => deliver(b), 'go')));
-    onPress = () => deliver(b);
-  } else {
-    const tb = targetBooth(), has = state.cards.length && tb && tb.open < 1;
-    say(el('p', { class: 'px-who' }, 'الكشك مقفل'), el('p', { class: 'px-big' }, title), el('p', { class: 'px-line' }, who),
-      el('p', { class: 'px-line small' }, has ? `بطاقاتك لكشك ${tb.name}.` : b.all ? 'يفتحه أي نوع من البطاقات؛ خذها من المدرسة.' : `مفتاحه بطاقات من فصل ${b.name} في المدرسة.`),
-      el('div', { class: 'px-acts' }, has ? pxBtn(`امشِ إلى كشك ${tb.name} (A)`, () => goTo(tb.x), 'go') : pxBtn('امشِ إلى المدرسة (A)', () => goTo(school.x), 'go')));
-    onPress = has ? () => goTo(tb.x) : () => goTo(school.x);
-  }
-}
-function boothTap(b) {
-  if (state.mode !== 'walk') return;
-  if (near === b) return (b.open >= 1 ? toNight(b) : fits(b) ? deliver(b) : null);
-  goTo(b.x);
+function centreDialog() {
+  const tb = targetBooth(), has = state.cards.length && tb && tb.open < 1, op = opened();
+  say(el('p', { class: 'px-who' }, 'مركز جابر الثقافي'),
+    el('p', { class: 'px-big' }, 'دائرة الأقسام'),
+    el('p', { class: 'px-line' }, has ? `معك ${cardWord(state.cards.length)} لـ${deptName(tb)}. ادخل وسلّمها.`
+      : op.length ? `${deptName(op[0])} مفتوح. ادخل واختر أفضل معلّم عندك.`
+        : 'في الداخل أقسام المدرسة على دائرة، وكلمات الطلاب لمعلّميهم. الأقسام مقفلة حتى تفوز بتحدّياتها في المدرسة.'),
+    el('div', { class: 'px-acts' }, pxBtn('ادخل (A)', enterCentre, 'go'), !has && !op.length ? pxBtn('المدرسة', () => goTo(school.x)) : null));
+  onPress = enterCentre;
 }
 
-/* ---------- تسليم البطاقات: تطير إلى الكشك ويرتفع بابه ---------- */
+/* ---------- داخل المركز: دائرة الأقسام ---------- */
+let streetCentreX = 0, prevLR = { l: false, r: false }, wordsTimer = null;
+async function enterCentre() {
+  if (state.mode !== 'walk') return;
+  state.mode = 'busy'; hush(); clearTags(); showPad(false); onPress = null;
+  await walkTo(centre.x);
+  sfx.door();
+  streetCentreX = player.x;
+  const tb = targetBooth(), op = opened();
+  const start = Math.max(0, booths.indexOf(state.cards.length && tb ? tb : op[0] || booths[0]));
+  ring.sel = start; ring.target = ring.rot = (-Math.PI * 2 * start) / booths.length;
+  await wipe(() => { state.mode = 'ring-busy'; setStage('KW 1-3', 'دائرة الأقسام'); });
+  state.mode = 'ring'; showPad(true); prevLR = { l: input.left, r: input.right };
+  showWords(true);
+  ringDialog();
+}
+function turnRing(step) {
+  if (state.mode !== 'ring' || !booths.length) return;
+  ring.sel = (ring.sel + step + booths.length) % booths.length;
+  ring.target -= (Math.PI * 2 * step) / booths.length;
+  sfx.whoosh();
+  ringDialog();
+}
+function ringTap(i) {
+  if (state.mode !== 'ring') return;
+  if (i === ring.sel) { const b = booths[i]; return b.open >= 1 ? toNight(b) : fits(b) ? deliver(b) : null; }
+  let step = i - ring.sel; const n = booths.length;
+  if (step > n / 2) step -= n; if (step < -n / 2) step += n;
+  turnRing(step);
+}
+function wordsFor(b) {
+  const ids = new Set(b.teachers.map((t) => t.id));
+  return state.words.filter((w) => b.all || ids.has(w.tid));
+}
+function ringDialog() {
+  const b = booths[ring.sel];
+  if (!b) return;
+  if (!state.scouted.has(b.name)) { state.scouted.add(b.name); state.score += 100; setScore(); }
+  const names = shuffle(b.teachers).slice(0, 4).map((t) => t.name);
+  const who = b.all ? 'كل معلّمي المدرسة.' : `${teacherCount(b.teachers.length)}: ${names.join('، ')}${b.teachers.length > 4 ? '…' : ''}`;
+  const ws = shuffle(wordsFor(b)).slice(0, tall() ? 1 : 2);
+  const quotes = ws.length ? el('div', { class: 'px-quotes' }, ws.map((w) => el('p', {}, el('span', {}, `«${w.text}»`), el('small', {}, `إلى ${w.teacher}`)))) : null;
+  const tb = targetBooth(), has = state.cards.length && tb && tb.open < 1;
+  let main, note;
+  if (b.open >= 1) { main = pxBtn('اختر أفضل معلّم عندك (A)', () => toNight(b), 'go'); onPress = () => toNight(b); note = 'القسم مفتوح.'; }
+  else if (fits(b)) { main = pxBtn(`سلّم ${cardWord(state.cards.length)} (A)`, () => deliver(b), 'go'); onPress = () => deliver(b); note = 'القسم مقفل، وبطاقاتك تفتحه.'; }
+  else {
+    main = has ? pxBtn(`دُر إلى ${deptName(tb)} (A)`, () => ringTap(booths.indexOf(tb)), 'go') : pxBtn('اخرج إلى المدرسة (A)', leaveCentre, 'go');
+    onPress = has ? () => ringTap(booths.indexOf(tb)) : leaveCentre;
+    note = has ? `بطاقاتك لـ${deptName(tb)}.` : b.all ? 'يفتحه الفوز بأي تحدّي في المدرسة.' : `يفتحه الفوز في سباق ${b.name} بالمدرسة.`;
+  }
+  say(el('p', { class: 'px-who' }, 'KW 1-3 · دائرة الأقسام · ◀ ▶ لتدور'),
+    el('p', { class: 'px-big' }, deptName(b)),
+    el('p', { class: 'px-line' }, who),
+    quotes,
+    el('p', { class: 'px-line small' }, note),
+    el('div', { class: 'px-acts' }, main, b.open >= 1 || fits(b) || has ? pxBtn('اخرج', leaveCentre) : null));
+}
+/** لوحة كلمات الطلاب في القاعة: كلمة كل بضع ثوانٍ، بلا اسم كاتبها */
+function showWords(on) {
+  const box = $('words');
+  clearInterval(wordsTimer);
+  if (!on || !state.words.length || tall()) { box.hidden = true; return; }   // على الجوال تظهر الكلمات داخل صندوق القسم
+  const list = shuffle(state.words);
+  let i = 0;
+  const next = () => {
+    const w = list[i++ % list.length];
+    box.replaceChildren(el('small', {}, 'كلمات الطلاب'), el('span', { class: 'w' }, `«${w.text}»`), el('b', {}, `إلى ${w.teacher}`));
+  };
+  next(); box.hidden = false;
+  if (list.length > 1) wordsTimer = setInterval(next, calm ? 7000 : 4500);
+}
+async function leaveCentre() {
+  if (state.mode !== 'ring') return;
+  hush(); clearTags(); showPad(false); onPress = null; showWords(false);
+  sfx.door();
+  await wipe(() => {
+    state.mode = 'busy'; player.x = streetCentreX || centre.x; player.dir = -1;
+    camX = clamp(player.x - W * 0.38, 0, Math.max(0, streetEnd - W * 0.7));
+    setStage('KW 1-1', 'شارع الخليج');
+  });
+  walk();
+}
+
+/* ---------- تسليم البطاقات: تطير إلى القسم ويرتفع بابه ---------- */
 async function deliver(b) {
-  if (state.mode !== 'walk' || !fits(b)) return;
-  state.mode = 'busy'; hush(); showPad(false); onPress = null;
-  await walkTo(b.x - 44 * (H / 422));   // يقف جانب الكشك كي يُرى الباب وهو يرتفع
-  player.dir = 1;
-  const gy = scene.L.groundY, base = gy + Math.round(H * 0.045), sy = base - b.img.height;
+  if (state.mode !== 'ring' || !fits(b)) return;
+  state.mode = 'ring-busy'; hush(); showPad(false); onPress = null;
+  const p0 = ringPos(booths.indexOf(b));
+  const sy = p0.y - b.img.height * p0.sc, R = ringHall;
   const cards = state.cards.slice();
   for (let i = 0; i < cards.length; i++) {
     const img = cardSprite(K, cards[i].gold, b.color);
     sfx.card();
-    const p = fly(img, player.x - camX, gy + Math.round(H * 0.11) - 30 * K, b.x - camX - 13 * b.u + i * 8 * b.u, sy + 24 * b.u, 0.55);
+    const p = fly(img, R.cx, H * 0.95, p0.x - 13 * p0.sc + i * 8 * p0.sc, sy + 24 * p0.sc, 0.55);
     await sleep(calm ? 10 : 170);
     if (i === cards.length - 1) await p;
   }
@@ -514,9 +635,10 @@ async function deliver(b) {
   for (let k = 1; k <= 20; k++) { b.open = k / 20; await sleep(calm ? 5 : 32); }
   voice('open');
   const colors = ['#f6d79a', '#e9b44c', '#fffaf0', b.color];
-  for (let i = 0; i < 28; i++) { const a = (i / 28) * Math.PI * 2, v = 25 + Math.random() * 30; fx.push({ x: b.x - camX, y: sy + 10 * b.u, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 20, t: 0, life: 1, c: colors[i % colors.length] }); }
+  for (let i = 0; i < 28; i++) { const a = (i / 28) * Math.PI * 2, v = 25 + Math.random() * 30; fx.push({ x: p0.x, y: sy + 10 * p0.sc, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 20, t: 0, life: 1, c: colors[i % colors.length] }); }
   state.score += 300; setScore();
-  state.mode = 'walk'; showPad(true); near = undefined;
+  state.mode = 'ring'; showPad(true);
+  ringDialog();
 }
 
 /* ======================================================================
@@ -551,7 +673,7 @@ function hallScout() {
     return;
   }
   if (now.exit) {
-    say(el('p', { class: 'px-who' }, 'الممرّ'), el('p', { class: 'px-big' }, 'باب الخروج'), el('p', { class: 'px-line' }, 'يرجعك إلى الكورنيش.'),
+    say(el('p', { class: 'px-who' }, 'الممرّ'), el('p', { class: 'px-big' }, 'باب الخروج'), el('p', { class: 'px-line' }, 'يرجعك إلى شارع الخليج.'),
       el('div', { class: 'px-acts' }, pxBtn('اخرج (A)', leaveSchool, 'go')));
     onPress = leaveSchool;
     return;
@@ -561,7 +683,7 @@ function hallScout() {
   say(el('p', { class: 'px-who' }, 'KW 1-2 · المدرسة'),
     el('p', { class: 'px-big' }, now.library ? 'المكتبة' : `فصل ${now.name}`),
     el('p', { class: 'px-line' }, (q ? `${q === 1 ? 'سؤال واحد' : q === 2 ? 'سؤالان' : '3 أسئلة'} على السبّورة. كل إجابة بطاقة، والصحيحة ذهبية.` : 'لا أسئلة هنا بعد؛ تأخذ بطاقة حضور.')
-      + (now.library ? ' بطاقاتها تفتح كشك «كل المعلّمين».' : '')),
+      + (now.library ? ' بطاقاتها تفتح قسم «كل المعلّمين».' : '')),
     swap,
     el('div', { class: 'px-acts' }, pxBtn(now.library ? 'ادخل المكتبة (A)' : 'ادخل الفصل (A)', () => enterClass(now), 'go')));
   onPress = () => enterClass(now);
@@ -646,8 +768,8 @@ async function raceOver(rank, ahead = []) {
     boardSay(el('small', {}, 'المركز الأول'), el('span', {}, `فزت! سبقت الغش والكسل${golds ? ` · ${goldWord(golds, true)}` : ''}`));
     say(el('p', { class: 'px-who' }, `KW 1-2 · سباق ${className()}`),
       el('p', { class: 'px-big' }, `أخذت ${cardWord(state.cards.length)}`),
-      el('p', { class: 'px-line' }, `${golds ? `منها ${goldWord(golds, true)}. ` : ''}سلّمها لكشك ${tb ? tb.name : ALL} على الكورنيش لينفتح.`),
-      el('div', { class: 'px-acts' }, pxBtn('اخرج إلى الكورنيش (A)', leaveSchool, 'go'), pxBtn('فصل آخر', backToHall)));
+      el('p', { class: 'px-line' }, `${golds ? `منها ${goldWord(golds, true)}. ` : ''}سلّمها لـ${tb ? deptName(tb) : 'قسم كل المعلّمين'} في مركز جابر الثقافي لينفتح.`),
+      el('div', { class: 'px-acts' }, pxBtn('اخرج إلى شارع الخليج (A)', leaveSchool, 'go'), pxBtn('فصل آخر', backToHall)));
     onPress = leaveSchool;
   } else {
     retries++;
@@ -678,7 +800,7 @@ async function leaveSchool() {
     $('board').hidden = true;
     state.mode = 'busy'; player.x = streetX || school.x; player.dir = 1;
     camX = clamp(player.x - W * 0.38, 0, Math.max(0, streetEnd - W * 0.7));
-    setStage('KW 1-1', 'الكورنيش');
+    setStage('KW 1-1', 'شارع الخليج');
   });
   walk();
 }
@@ -688,15 +810,19 @@ async function leaveSchool() {
    ====================================================================== */
 let pick = null, skyNear = null, beam = null;
 async function toNight(b) {
-  if (state.mode !== 'walk' || b.open < 1) return;
+  if (state.mode !== 'ring' || b.open < 1) return;
   state.subject = b;
-  state.mode = 'busy'; hush(); showPad(false); onPress = null;
-  await walkTo(b.x);
+  hush(); clearTags(); showPad(false); onPress = null; showWords(false);
+  sfx.door();
+  await wipe(() => {
+    state.mode = 'busy'; player.x = streetCentreX || centre.x; player.dir = 1;
+    camX = clamp(player.x - W * 0.5, 0, Math.max(0, streetEnd - W * 0.7));
+  });
   night();
 }
 async function night() {
   onPress = null;
-  state.mode = 'night'; setStage('KW 1-3', 'السماء');
+  state.mode = 'night'; setStage('KW 1-4', 'السماء');
   hush(); clearTags(); pick = null; skyNear = null; state.teacher = null;
   const list = shuffle(state.subject.teachers);
   const show = list.slice(0, Math.max(1, Math.min(list.length, W > 400 ? 12 : 8)));
@@ -711,10 +837,10 @@ async function night() {
 function skyDialog(list) {
   // يختار الطالب من معلّمي المدرسة كما أضافتهم الإدارة، بلا بحث
   const names = list.slice().sort((x, y) => x.name.localeCompare(y.name, 'ar'));
-  say(el('p', { class: 'px-who' }, 'KW 1-3 · السماء'),
+  say(el('p', { class: 'px-who' }, 'KW 1-4 · السماء'),
     el('p', { class: 'px-line' }, 'كل نجم معلّم. امشِ تحت النجوم واضغط A، أو اختر أفضل معلّم عندك من القائمة.'),
     el('div', { class: 'px-list' }, names.map((t) => pxBtn(t.name, () => choose(stars.find((s) => s.t.id === t.id) || addStar(t)), 'small'))),
-    el('button', { class: 'px-link', type: 'button', onclick: backToWalk }, 'عُد إلى الكورنيش'));
+    el('button', { class: 'px-link', type: 'button', onclick: backToWalk }, 'عُد إلى شارع الخليج'));
   onPress = () => skyNear && choose(skyNear);
 }
 function addStar(t) {
@@ -744,16 +870,16 @@ function choose(s) {
    KW 1-4: الرسالة، ثم الوصول
    ====================================================================== */
 function message() {
-  state.mode = 'msg'; setStage('KW 1-4', 'الرسالة'); showPad(false);
+  state.mode = 'msg'; setStage('KW 1-5', 'كتابك'); showPad(false);
   player.auto = camX + pick.sx;
   const ta = el('textarea', { class: 'px-input', id: 'reason', maxlength: 300, rows: 3, placeholder: 'ماذا يميّزه؟ ماذا تعلّمت منه؟' });
   const count = el('span', { class: 'px-count' }, '0/300');
   ta.addEventListener('input', () => { count.textContent = `${ta.value.length}/300`; });
   const send = pxBtn('ارفع كتابك ★', () => finale(ta.value.trim(), send), 'go');
-  say(el('p', { class: 'px-who' }, 'KW 1-4 · كتابك'),
+  say(el('p', { class: 'px-who' }, 'KW 1-5 · كتابك'),
     el('div', { class: 'px-bookpage' }, el('p', { class: 'px-bookstar', 'aria-hidden': 'true' }, '★'), el('p', { class: 'px-big' }, pick.t.name),
       el('label', { class: 'px-line small', for: 'reason' }, 'اكتب كلمتك تحت النجمة: لماذا اخترته؟ (اختياري)'), ta, count),
-    el('div', { class: 'px-acts' }, send, pxBtn('غيّر', () => { state.mode = 'night'; setStage('KW 1-3', 'السماء'); stars.forEach((o) => { o.dim = false; }); pick = null; showPad(true); skyDialog(state.subject.teachers); })));
+    el('div', { class: 'px-acts' }, send, pxBtn('غيّر', () => { state.mode = 'night'; setStage('KW 1-4', 'السماء'); stars.forEach((o) => { o.dim = false; }); pick = null; showPad(true); skyDialog(state.subject.teachers); })));
   onPress = null;
 }
 async function finale(reason, btn) {
@@ -809,6 +935,7 @@ function ended(title, text) {
   requestAnimationFrame(loop);
   try { state.game = await api('/api/game'); } catch { $('loading').hidden = true; return ended('تعذّر الاتصال', 'لم نستطع تحميل اللعبة. تحقّق من الإنترنت ثم حاول مجدداً.'); }
   if (state.game.school) $('hud-school').textContent = state.game.school;
+  api('/api/words').then((r) => { state.words = r.items || []; }).catch(() => {});
   buildWorld(); setScore();
   $('loading').hidden = true;
   if (state.game.voted) return ended('سبق أن رشّحت', 'سُجّل ترشيحك من هذا الجهاز من قبل. لكل طالب صوت واحد.');

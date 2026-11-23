@@ -310,7 +310,7 @@
 
   function renderSettingsOnce() {
     const s = data.settings;
-    $('set-school').value = s.school; $('set-title').value = s.title; $('set-open').checked = s.open;
+    $('set-school').value = s.school; $('set-title').value = s.title; $('set-open').checked = s.open; $('set-words').checked = s.showWords !== false;
     $('qr-url').value = s.publicUrl || location.origin + '/';
     renderPoster();
   }
@@ -433,7 +433,7 @@
 
   $('set-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    await api('/api/admin/settings', { school: $('set-school').value, title: $('set-title').value, open: $('set-open').checked });
+    await api('/api/admin/settings', { school: $('set-school').value, title: $('set-title').value, open: $('set-open').checked, showWords: $('set-words').checked });
     toast('حُفظت الإعدادات'); await refresh(); renderPoster();
   });
   $('pass-form').addEventListener('submit', async (e) => {

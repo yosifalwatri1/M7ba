@@ -15,7 +15,7 @@ const F_DISP = '"Kufi", "Plex Arabic", "Segoe UI", sans-serif';
 const PW = 2000, COLS = 8, SP = PW / COLS;          // ٨ طلاب في الصف
 const BOOK_W = 206, BOOK_MIN = 150, BOOK_MAX = 300;
 const TALL = 4, SHORT = 3;                           // مضاعف حجم الشخصية: طويل وقصير
-const SCENE_H = 800, GROUND0 = 704, ROW_H = 560;     // الصف الأول على الكورنيش أمام الأبراج
+const SCENE_H = 800, GROUND0 = 704, ROW_H = 560;     // الصف الأول على شارع الخليج أمام الأبراج
 const MAX_ROWS = 45;                                 // حدّ الصورة الواحدة (٣٦٠ طالباً)؛ الأكثر يُقسَّم أجزاءً
 
 const people = (n) => (n === 1 ? 'مشارك واحد' : n === 2 ? 'مشاركان' : n <= 10 ? `${n} مشاركين` : `${n} مشاركاً`);
@@ -186,7 +186,7 @@ function banner(g, h, info, page) {
   g.fillText(page ? `${today()} · صفحة ${page.n} من ${page.of}` : today(), 56, ty + (page ? 38 : 50));
 }
 
-/** ورقة: بانر، ثم المشهد والصف الأول على الكورنيش، ثم بقية الصفوف كمدرّجات */
+/** ورقة: بانر، ثم المشهد والصف الأول على شارع الخليج، ثم بقية الصفوف كمدرّجات */
 function sheet(rows, info, page) {
   const B = page ? 130 : 210;
   const tail = page ? 20 : 120;

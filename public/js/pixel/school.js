@@ -1,4 +1,4 @@
-/* فنّ البكسل للمدرسة: الواجهة على الكورنيش، الممرّ وأبواب الفصول، الفصل والسبّورة، البطاقات، وأبواب الأكشاك المعدنية.
+/* فنّ البكسل للمدرسة: الواجهة على شارع الخليج، الممرّ وأبواب الفصول، الفصل والسبّورة، البطاقات، وأبواب الأكشاك المعدنية.
    كل شيء مرسوم بالكود بدقّة منخفضة، بنفس ألوان الغروب. */
 import { canvas, kuwaitTowers, rng } from './art.js';
 
@@ -32,7 +32,7 @@ function sunsetView(g, x, y, w, h) {
   g.fillStyle = '#8c6884'; g.fillRect(x, y + h - Math.max(2, Math.round(h * 0.1)), w, Math.max(2, Math.round(h * 0.1)));
 }
 
-/* ---------- واجهة المدرسة على الكورنيش (٨٤×٩٠ وحدة) ---------- */
+/* ---------- واجهة المدرسة على شارع الخليج (٨٤×٩٠ وحدة) ---------- */
 export function schoolFacade(H) {
   const u = Math.max(1, Math.round(H / 260)), [c, g] = canvas(84 * u, 90 * u), B = box(g, u);
   // الجناحان
@@ -73,7 +73,7 @@ export function schoolFacade(H) {
   return { img: c, u, sign: { x: 42 * u, y: 40 * u } };
 }
 
-/* ---------- الباب المعدني للكشك: يغطّي نافذة البيع حتى تُسلَّم البطاقات ---------- */
+/* ---------- الباب المعدني للقسم: يغطّي نافذته حتى تُسلَّم البطاقات ---------- */
 export function shutter(H) {
   const u = Math.max(1, Math.round(H / 260)), [c, g] = canvas(34 * u, 13 * u), B = box(g, u);
   for (let y = 0; y < 13; y++) B(0, y, 34, 1, y % 2 ? '#7d8391' : '#a7adb9');
@@ -203,4 +203,82 @@ export function createClassroom(W, H) {
     g.fillStyle = '#2f6fa8'; g.fillRect(x + 12, deskY + 8, 18, 3); g.fillRect(x + 12, deskY - 8, 3, 16);
   }
   return { img: c, fy, board: { x: bx, y: by, w: bw, h: bh } };
+}
+
+/* ---------- مركز جابر الثقافي على شارع الخليج: ثلاث كتل بيضاء بشبك هندسي، وواجهة زجاجية ---------- */
+export function centreFacade(H) {
+  const u = Math.max(1, Math.round(H / 260)), w = 96, h = 72;
+  const [s, g] = canvas(w, h);
+  const P = (x, y, ww, hh, col) => { g.fillStyle = col; g.fillRect(x, y, ww, hh); };
+  // ساحة ودرج
+  P(0, 64, 96, 8, SAND[2]); P(0, 64, 96, 1, SAND[0]); P(30, 66, 36, 2, SAND[1]); P(26, 69, 44, 3, SAND[3]);
+  // الكتل الثلاث بسطوح مائلة
+  const blocks = [[2, 30, 28, 22], [30, 66, 8, 16], [66, 94, 24, 20]];
+  for (const [x0, x1, t0, t1] of blocks) {
+    for (let x = x0; x < x1; x++) {
+      const top = Math.round(t0 + ((t1 - t0) * (x - x0)) / (x1 - x0 - 1));
+      for (let y = top; y < 64; y++) {
+        const edge = y === top || x === x0 || x === x1 - 1;
+        const lattice = ((x + y) % 6 === 0) || ((x - y + 600) % 6 === 0);
+        const shade = x > x0 + (x1 - x0) * 0.7;
+        g.fillStyle = edge ? '#c9c0ae' : lattice ? (shade ? '#cfc6b4' : '#ddd5c5') : (shade ? '#e8e1d2' : '#f6f2e8');
+        g.fillRect(x, y, 1, 1);
+      }
+    }
+  }
+  // الشريط الزجاجي والمدخل
+  for (let x = 2; x < 94; x++) for (let y = 52; y < 64; y++) { g.fillStyle = (x * 3 + y) % 11 === 0 ? '#6f97a6' : y < 54 ? '#4f7686' : '#3a5f6e'; g.fillRect(x, y, 1, 1); }
+  P(2, 51, 92, 1, '#c9c0ae');
+  for (let x = 8; x < 94; x += 10) P(x, 52, 1, 12, '#2b4651');
+  P(41, 50, 14, 14, INK); P(42, 51, 12, 13, '#23434f'); P(47, 51, 1, 13, '#152e37'); P(43, 53, 3, 8, '#5f8fa6'); P(49, 53, 3, 8, '#5f8fa6');
+  // لوحة الاسم (الاسم يُكتب فوقها بخط حادّ)
+  P(34, 36, 28, 8, INK); P(35, 37, 26, 6, '#f6efe0');
+  const [c, cg] = canvas(w * u, h * u); cg.drawImage(s, 0, 0, w * u, h * u);
+  return { img: c, u, sign: { x: 48 * u, y: 44 * u } };
+}
+
+/* ---------- دائرة الأقسام داخل المركز: قاعة دائرية، أرضية بنجمة ثمانية في الوسط، وجدار بشبك أبيض ---------- */
+export function createRingHall(W, H, tall = false) {
+  const [c, g] = canvas(W, H);
+  const cx = Math.round(W / 2), cy = Math.round(H * (tall ? 0.34 : 0.42)), rx = Math.round(Math.min(W * 0.42, H * 0.75)), ry = Math.round(H * (tall ? 0.1 : 0.13));
+  const wallB = Math.round(cy - ry * 1.5);
+  // الجدار: شبك أبيض ونوافذ عالية على الغروب
+  for (let y = 0; y < wallB; y++) for (let x = 0; x < W; x++) {
+    const lattice = ((x + y) % 8 === 0) || ((x - y + 8000) % 8 === 0);
+    g.fillStyle = lattice ? '#d9d0bf' : (y < wallB * 0.18 ? '#e8e1d2' : '#f4efe4'); g.fillRect(x, y, 1, 1);
+  }
+  const winW = Math.max(14, Math.round(H * 0.05)), winH = Math.round(wallB * 0.45);
+  for (let x = Math.round(W * 0.06); x < W - winW; x += Math.round(Math.max(winW * 3, W / 6))) {
+    g.fillStyle = '#c9c0ae'; g.fillRect(x - 2, Math.round(wallB * 0.25) - 2, winW + 4, winH + 4);
+    sunsetView(g, x, Math.round(wallB * 0.25), winW, winH);
+  }
+  g.fillStyle = '#b8ad98'; g.fillRect(0, wallB - 3, W, 3);
+  // الأرضية: رخام فاتح ببلاط
+  for (let y = wallB; y < H; y++) {
+    const k = (y - wallB) / (H - wallB);
+    for (let x = 0; x < W; x++) {
+      const line = (y - wallB) % 12 === 0 || (x + Math.round((y - wallB) * 0.3)) % 24 === 0;
+      g.fillStyle = line ? '#d8cdb8' : k * 16 > BAYER[y & 3][x & 3] * 1.6 ? '#ece3d2' : '#f4ecdd';
+      g.fillRect(x, y, 1, 1);
+    }
+  }
+  // الحلقة التي تقف عليها الأقسام
+  const ring = (rrx, rry, col, th) => {
+    for (let a = 0; a < Math.PI * 2; a += 0.004) {
+      const x = Math.round(cx + Math.sin(a) * rrx), y = Math.round(cy + Math.cos(a) * rry);
+      g.fillStyle = col; g.fillRect(x, y, th, Math.max(1, Math.round(th / 2)));
+    }
+  };
+  ring(rx + 6, ry + 3, '#c9b28a', 3); ring(rx - 6, ry - 3, '#c9b28a', 2);
+  // نجمة ثمانية في الوسط
+  const star8 = (r, col) => {
+    for (const rot of [0, Math.PI / 4]) {
+      g.fillStyle = col; g.beginPath();
+      for (let i = 0; i < 4; i++) { const a = rot + (i * Math.PI) / 2; g.lineTo(cx + Math.cos(a) * r, cy + Math.sin(a) * r * (ry / rx) * 1.6); }
+      g.closePath(); g.fill();
+    }
+  };
+  const sr = Math.round(Math.min(rx * 0.32, H * 0.12));
+  star8(sr + 3, '#1f5f60'); star8(sr, '#3f9f98'); star8(Math.round(sr * 0.55), '#e9b44c');
+  return { img: c, cx, cy, rx, ry, wallB };
 }
