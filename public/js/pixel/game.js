@@ -1,10 +1,12 @@
-/* «نجمك يا معلّم» بأسلوب البكسل: مشي على كورنيش الكويت وقت الغروب
+/* «المعلّم النجم» بأسلوب البكسل: مشي على كورنيش الكويت وقت الغروب
    KW 1-1 الكورنيش: أكشاك المواد مقفلة، والمدرسة أول الشارع
    KW 1-2 المدرسة: ممرّ بأبواب الفصول؛ في الفصل أسئلة على السبّورة، وكل إجابة بطاقة (الصحيحة ذهبية)
    ← تُسلَّم البطاقات لكشك المادة فينفتح ← KW 1-3 نجوم الليل ← KW 1-4 الرسالة ← وصل ترشيحك */
 import { createScene } from './scene.js';
 import { playerFrames, booth, starSprite, LOOKS, rng } from './art.js';
 import { schoolFacade, shutter, cardSprite, createCorridor, createClassroom } from './school.js';
+import { createRace } from './race.js';
+import { unlock, voice, sfx, ambience, engine, soundOn, setSound } from './audio.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, attrs = {}, ...kids) => {
@@ -107,6 +109,8 @@ addEventListener('keydown', (e) => {
   if (e.target.closest && e.target.closest('input, textarea')) return;
   if (['ArrowLeft', 'a', 'A'].includes(e.key)) input.left = true;
   if (['ArrowRight', 'd', 'D'].includes(e.key)) input.right = true;
+  if (['ArrowUp', 'w', 'W'].includes(e.key)) { input.up = true; if (state.mode === 'race') e.preventDefault(); }
+  if (['ArrowDown', 's', 'S'].includes(e.key)) { input.down = true; if (state.mode === 'race') e.preventDefault(); }
   if ([' ', 'Enter'].includes(e.key)) { if (e.target.closest && e.target.closest('button, a')) return; e.preventDefault(); press(); }
 });
 addEventListener('keyup', (e) => {
@@ -115,11 +119,29 @@ addEventListener('keyup', (e) => {
 });
 function hold(id, key) {
   const b = $(id);
-  const on = (e) => { e.preventDefault(); input[key] = true; b.classList.add('down'); }, off = () => { input[key] = false; b.classList.remove('down'); };
+  // في السباق يصبح الزرّان ▲ و▼ لتغيير المسار
+  const on = (e) => { e.preventDefault(); if (state.mode === 'race') input[key === 'left' ? 'up' : 'down'] = true; else input[key] = true; b.classList.add('down'); };
+  const off = () => { input[key] = false; b.classList.remove('down'); };
   b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
 }
 hold('pad-left', 'left'); hold('pad-right', 'right');
 $('pad-a').addEventListener('click', () => press());
+function setPad(race) {
+  $('pad-left').textContent = race ? '▲' : '◀'; $('pad-left').setAttribute('aria-label', race ? 'المسار الأعلى' : 'امشِ يساراً');
+  $('pad-right').textContent = race ? '▼' : '▶'; $('pad-right').setAttribute('aria-label', race ? 'المسار الأسفل' : 'امشِ يميناً');
+  $('pad-a').setAttribute('aria-label', race ? 'اقفز' : 'زر الاختيار');
+}
+// السحب لأعلى أو لأسفل على الشاشة يغيّر المسار في السباق
+let swipeY = null;
+screen.addEventListener('pointerdown', (e) => { swipeY = e.clientY; });
+screen.addEventListener('pointerup', (e) => {
+  if (state.mode === 'race' && swipeY != null) { const dy = e.clientY - swipeY; if (dy < -24) input.up = true; else if (dy > 24) input.down = true; else race?.jump(); }
+  swipeY = null;
+});
+// زر الصوت
+function soundLabel() { $('snd').textContent = soundOn() ? 'الصوت: يعمل' : 'الصوت: مطفأ'; $('snd').setAttribute('aria-pressed', String(soundOn())); }
+$('snd').addEventListener('click', () => { unlock(); setSound(!soundOn()); soundLabel(); });
+soundLabel();
 let onPress = null;
 function press() { if (onPress) onPress(); }
 
@@ -175,7 +197,15 @@ function loop(now) {
   }
   requestAnimationFrame(loop);
 }
+let ambLevel = -1;
 function update(dt) {
+  const amb = { walk: 1, busy: 1, intro: 1, dress: 1, night: 0.6, msg: 0.6, win: 0.6, school: 0.2, 'hall-busy': 0.2, class: 0.15, race: 0.5 }[state.mode] ?? 0;
+  if (amb !== ambLevel) { ambLevel = amb; ambience(amb); }
+  if (state.mode === 'race' && race) {
+    race.update(dt, input);
+    fx = fx.filter((p) => { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 40 * dt; return p.t < p.life; });
+    return;
+  }
   const walkable = ['walk', 'night', 'school'].includes(state.mode);
   let dir = 0;
   if (player.auto != null) { dir = Math.sign(player.auto - player.x); if (Math.abs(player.auto - player.x) < 2) { player.x = player.auto; player.auto = null; dir = 0; } }
@@ -200,6 +230,13 @@ function update(dt) {
 function draw() {
   if (!scene) return;
   let gy = scene.L.groundY;
+  if (state.mode === 'race' && race) {
+    race.draw(g, state.t);
+    for (const p of fx) { g.globalAlpha = clamp(1 - p.t / p.life, 0, 1); g.fillStyle = p.c; g.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); }
+    g.globalAlpha = 1;
+    if (fade > 0) { g.fillStyle = `rgba(20,10,24,${fade})`; g.fillRect(0, 0, W, H); }
+    return;
+  }
   if (inHall()) drawHall();
   else if (state.mode === 'class') { g.drawImage(room.img, 0, 0); gy = room.fy + 6 - Math.round(H * 0.11); }
   else {
@@ -321,6 +358,7 @@ async function start() {
   if (state.mode !== 'title') return;
   $('title').hidden = true;
   state.start = Date.now();
+  unlock();
   state.mode = 'intro';
   camX = 0; player.x = -30; player.auto = W * 0.42; player.dir = 1;
   setStage('KW 1-1', 'الكورنيش');
@@ -464,6 +502,7 @@ async function deliver(b) {
   const cards = state.cards.slice();
   for (let i = 0; i < cards.length; i++) {
     const img = cardSprite(K, cards[i].gold, b.color);
+    sfx.card();
     const p = fly(img, player.x - camX, gy + Math.round(H * 0.11) - 30 * K, b.x - camX - 13 * b.u + i * 8 * b.u, sy + 24 * b.u, 0.55);
     await sleep(calm ? 10 : 170);
     if (i === cards.length - 1) await p;
@@ -471,7 +510,9 @@ async function deliver(b) {
   state.boothAnswers[b.name] = state.answers;
   state.cards = []; setCards();
   b.shown = cards.slice(0, 3);
+  sfx.shutter();
   for (let k = 1; k <= 20; k++) { b.open = k / 20; await sleep(calm ? 5 : 32); }
+  voice('open');
   const colors = ['#f6d79a', '#e9b44c', '#fffaf0', b.color];
   for (let i = 0; i < 28; i++) { const a = (i / 28) * Math.PI * 2, v = 25 + Math.random() * 30; fx.push({ x: b.x - camX, y: sy + 10 * b.u, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 20, t: 0, life: 1, c: colors[i % colors.length] }); }
   state.score += 300; setScore();
@@ -486,6 +527,7 @@ async function enterSchool() {
   if (state.mode !== 'walk') return;
   state.mode = 'busy'; hush(); clearTags(); showPad(false); onPress = null;
   await walkTo(school.x);
+  sfx.door();
   streetX = player.x;
   await wipe(() => { state.mode = 'hall-busy'; player.x = doors[0].x + 34; player.dir = 1; camX = 0; setStage('KW 1-2', 'المدرسة'); });
   toHall();
@@ -530,55 +572,100 @@ function doorTap(d, fromList) {
   if (hallNear === d || fromList) return enterClass(d);
   enterClass(d);
 }
+let race = null, retries = 0, classDoor = null, classQs = [], raceStartScore = 0;
 async function enterClass(d) {
   if (state.mode !== 'school') return;
   state.mode = 'hall-busy'; hush(); clearTags(); showPad(false); onPress = null;
   await walkTo(d.x);
+  sfx.door();
   const req = api('/api/game/questions?subject=' + encodeURIComponent(d.subject || '')).catch(() => ({ items: [] }));
   await wipe(() => { state.mode = 'class'; player.x = Math.round(W * (tall() ? 0.2 : 0.5)); player.dir = 1; camX = 0; setStage('KW 1-2', d.library ? 'المكتبة' : `فصل ${d.name}`); });
-  const { items } = await req;
-  state.cards = []; state.answers = {}; state.cardsFor = d.library ? ALL : d.subject; setCards();
+  classQs = (await req).items || []; classDoor = d; retries = 0;
+  briefing();
+}
+function boardSay(...kids) {
   const board = $('board'), bd = room.board;
   Object.assign(board.style, { left: bd.x * S + 'px', top: bd.y * S + 'px', width: bd.w * S + 'px', height: bd.h * S + 'px' });
-  board.replaceChildren(); board.hidden = false;
+  board.replaceChildren(...kids); board.hidden = false;
+}
+const className = () => (classDoor.library ? 'المكتبة' : classDoor.name);
+/** تعريف بالتحدّي على السبّورة */
+function briefing() {
+  boardSay(el('small', {}, `تحدّي ${className()}`), el('span', {}, 'اسبق «الغش» و«الكسل» إلى خط النهاية'));
+  const n = Math.min(3, classQs.length);
+  say(el('p', { class: 'px-who' }, 'KW 1-2 · تحدّي المادة'),
+    el('p', { class: 'px-big' }, `سباق ${className()}`),
+    el('p', { class: 'px-line' }, '▲▼ لتغيير المسار، وA للقفز. تجنّب أصحاب السوء والجوال وورقة الغش والسهر، واجمع الكتب والنجوم.'),
+    n ? el('p', { class: 'px-line small' }, `في الطريق ${n === 1 ? 'بوابة سؤال' : n === 2 ? 'بوابتا أسئلة' : '3 بوابات أسئلة'}: ادخل مسار الإجابة الصحيحة لتنطلق أسرع وتأخذ بطاقة ذهبية.`) : null,
+    el('div', { class: 'px-acts' }, pxBtn('انطلق (A)', startRace, 'go'), pxBtn('فصل آخر', backToHall)));
+  onPress = startRace;
+}
+async function startRace() {
+  if (state.mode !== 'class') return;
+  hush(); onPress = null;
+  state.cards = []; state.answers = {}; state.cardsFor = classDoor.library ? ALL : classDoor.subject; setCards();
+  raceStartScore = state.score;
+  await wipe(() => {
+    $('board').hidden = true;
+    state.mode = 'race'; setStage('KW 1-2', `سباق ${className()}`);
+    race = createRace({
+      W, H, scene, look: state.look, questions: classQs, retries, sound: { sfx, voice, engine },
+      ui: {
+        banner: $('raceq'),
+        score: (n) => { state.score += n; setScore(); },
+        gate: async (q, lane) => {
+          state.answers[q.id] = lane;
+          const r = await api('/api/game/check', { id: q.id, choice: lane }).catch(() => null);
+          state.cards.push({ gold: !!(r && r.correct) }); setCards(); sfx.card();
+          return r;
+        },
+        tag: (key, html, cls, x, y, vis) => { if (!vis || !html) return hideTag(key); const t = tag(key, html, cls); t.style.visibility = ''; place(t, x, y); },
+        finish: (rank, ahead) => raceOver(rank, ahead),
+      },
+    });
+  });
+  setPad(true); showPad(true);
+  onPress = () => race && race.jump();
+}
+async function raceOver(rank, ahead = []) {
+  onPress = null; showPad(false);
+  race.stop();
+  const won = rank === 1;
+  if (won) {
+    voice('win');
+    if (!state.cards.length) { state.cards.push({ gold: false }); setCards(); }
+    state.score += 1000; setScore();
+    const colors = ['#f6d79a', '#e9b44c', '#5fcf86', '#ffffff'];
+    for (let i = 0; i < 40; i++) { const a = (i / 40) * Math.PI * 2, v = 30 + Math.random() * 40; fx.push({ x: W * 0.3, y: H * 0.45, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 20, t: 0, life: 1.3, c: colors[i % 4] }); }
+    await sleep(calm ? 100 : 1000);
+  } else voice('again');
+  await wipe(() => { clearTags(); race = null; setPad(false); state.mode = 'class'; camX = 0; setStage('KW 1-2', classDoor.library ? 'المكتبة' : `فصل ${classDoor.name}`); });
   const tb = targetBooth();
-  const award = async (gold) => {
-    const img = cardSprite(K, gold, tb ? tb.color : '#2f7fbf');
-    const [hx, hy] = hudCardsPoint();
-    await fly(img, bd.x + bd.w / 2, bd.y + bd.h / 2, hx, hy, 0.8);
-    state.cards.push({ gold }); setCards();
-    state.score += gold ? 500 : 100; setScore();
-  };
-  if (!items.length) {
-    board.replaceChildren(el('span', {}, 'أهلاً بك! سُجّل حضورك'));
-    await award(false);
+  if (won) {
+    const golds = state.cards.filter((c) => c.gold).length;
+    boardSay(el('small', {}, 'المركز الأول'), el('span', {}, `فزت! سبقت الغش والكسل${golds ? ` · ${goldWord(golds, true)}` : ''}`));
+    say(el('p', { class: 'px-who' }, `KW 1-2 · سباق ${className()}`),
+      el('p', { class: 'px-big' }, `أخذت ${cardWord(state.cards.length)}`),
+      el('p', { class: 'px-line' }, `${golds ? `منها ${goldWord(golds, true)}. ` : ''}سلّمها لكشك ${tb ? tb.name : ALL} على الكورنيش لينفتح.`),
+      el('div', { class: 'px-acts' }, pxBtn('اخرج إلى الكورنيش (A)', leaveSchool, 'go'), pxBtn('فصل آخر', backToHall)));
+    onPress = leaveSchool;
+  } else {
+    retries++;
+    state.score = raceStartScore; setScore();
+    state.cards = []; setCards();
+    const who = ahead.length > 1 ? 'الغش والكسل' : ahead[0] || 'الغش';
+    boardSay(el('small', {}, `المركز ${rank === 2 ? 'الثاني' : 'الثالث'}`), el('span', {}, `${who} ${ahead.length > 1 ? 'وصلا' : 'وصل'} قبلك هذه المرة`));
+    say(el('p', { class: 'px-who' }, `KW 1-2 · سباق ${className()}`),
+      el('p', { class: 'px-big' }, 'لا تستسلم!'),
+      el('p', { class: 'px-line' }, 'تجنّب العقبات وادخل مسار الإجابة الصحيحة لتنطلق أسرع. المحاولة الجاية أسهل شوي.'),
+      el('div', { class: 'px-acts' }, pxBtn('حاول مرة ثانية (A)', startRace, 'go'), pxBtn('فصل آخر', backToHall)));
+    onPress = startRace;
   }
-  for (let i = 0; i < items.length; i++) {
-    const q = items[i];
-    board.replaceChildren(el('small', {}, `السؤال ${i + 1} من ${items.length}`), el('span', {}, q.q));
-    const slots = el('p', { class: 'px-slots', 'aria-hidden': 'true' }, items.map((_, k) => el('span', { class: k < state.cards.length ? (state.cards[k].gold ? 'gold' : 'got') : '' })));
-    const choice = await new Promise((resolve) => say(slots, el('p', { class: 'px-who' }, 'اختر الإجابة'),
-      el('div', { class: 'px-choices' }, q.choices.map((c, k) => pxBtn(c, () => resolve(k), 'choice')))));
-    state.answers[q.id] = choice;
-    const r = await api('/api/game/check', { id: q.id, choice }).catch(() => null);
-    const btns = dlg.querySelectorAll('.choice');
-    btns.forEach((b) => { b.disabled = true; });
-    if (r) { btns[r.answer]?.classList.add('right'); if (!r.correct) btns[choice]?.classList.add('wrong'); }
-    await award(!!(r && r.correct));
-    await sleep(calm ? 300 : 700);
-  }
-  const golds = state.cards.filter((c) => c.gold).length;
-  board.replaceChildren(el('span', {}, golds ? `أحسنت! ${goldWord(golds, true)}` : 'شكراً لمشاركتك'));
-  say(el('p', { class: 'px-who' }, d.library ? 'KW 1-2 · المكتبة' : `KW 1-2 · فصل ${d.name}`),
-    el('p', { class: 'px-big' }, `أخذت ${cardWord(state.cards.length)}`),
-    el('p', { class: 'px-line' }, `${golds ? `منها ${goldWord(golds, true)}. ` : ''}سلّمها لكشك ${tb ? tb.name : ALL} على الكورنيش لينفتح.`),
-    el('div', { class: 'px-acts' }, pxBtn('اخرج إلى الكورنيش (A)', leaveSchool, 'go'), pxBtn('فصل آخر', backToHall)));
-  onPress = leaveSchool;
 }
 async function backToHall() {
   if (state.mode !== 'class') return;
   hush(); onPress = null;
-  const d = doors.find((x) => x.subject === state.cardsFor && !x.library) || doors.find((x) => x.library);
+  const d = classDoor || doors.find((x) => x.library);
   await wipe(() => { $('board').hidden = true; state.mode = 'hall-busy'; player.x = d.x; camX = clamp(player.x - W * 0.38, 0, Math.max(0, hallEnd - W * 0.7)); setStage('KW 1-2', 'المدرسة'); });
   toHall();
 }
@@ -622,21 +709,11 @@ async function night() {
   skyDialog(list);
 }
 function skyDialog(list) {
-  const search = el('input', { class: 'px-input', type: 'search', placeholder: 'ابحث باسم المعلّم', 'aria-label': 'ابحث باسم المعلّم', autocomplete: 'off' });
-  const found = el('div', { class: 'px-list' });
-  let timer;
-  search.addEventListener('input', () => {
-    clearTimeout(timer);
-    timer = setTimeout(async () => {
-      const q = search.value.trim();
-      if (q.length < 2) { found.replaceChildren(); return; }
-      const { items } = await api('/api/suggest?q=' + encodeURIComponent(q)).catch(() => ({ items: [] }));
-      found.replaceChildren(...items.map((t) => pxBtn(t.name, () => choose(stars.find((s) => s.t.id === t.id) || addStar(t)), 'small')));
-    }, 160);
-  });
+  // يختار الطالب من معلّمي المدرسة كما أضافتهم الإدارة، بلا بحث
+  const names = list.slice().sort((x, y) => x.name.localeCompare(y.name, 'ar'));
   say(el('p', { class: 'px-who' }, 'KW 1-3 · السماء'),
-    el('p', { class: 'px-line' }, 'كل نجم معلّم. امشِ تحت النجوم لتستطلعها، ثم اضغط A أو المس نجم معلّمك.'),
-    search, found, list.length > stars.length ? el('p', { class: 'px-line small' }, `في السماء ${stars.length} من ${list.length}؛ ابحث عن الباقين بالاسم.`) : null,
+    el('p', { class: 'px-line' }, 'كل نجم معلّم. امشِ تحت النجوم واضغط A، أو اختر أفضل معلّم عندك من القائمة.'),
+    el('div', { class: 'px-list' }, names.map((t) => pxBtn(t.name, () => choose(stars.find((s) => s.t.id === t.id) || addStar(t)), 'small'))),
     el('button', { class: 'px-link', type: 'button', onclick: backToWalk }, 'عُد إلى الكورنيش'));
   onPress = () => skyNear && choose(skyNear);
 }
@@ -683,7 +760,7 @@ async function finale(reason, btn) {
   btn.disabled = true;
   let r;
   try {
-    r = await api('/api/vote', { teacherId: state.teacher.id, name: state.teacher.name, reason, subject: state.subject.all ? '' : state.subject.name, answers: state.boothAnswers[state.subject.name] || {}, look: state.look });
+    r = await api('/api/vote', { teacherId: state.teacher.id, name: state.teacher.name, reason, subject: state.subject.all ? '' : state.subject.name, answers: state.boothAnswers[state.subject.name] || {}, look: state.look, score: state.score });
   } catch (e) {
     if (e.status === 409) return ended('سبق أن رشّحت', 'سُجّل ترشيحك من هذا الجهاز من قبل. لكل طالب صوت واحد.');
     if (e.status === 403) return ended('التصويت مغلق', 'انتهت فترة الترشيح. شكراً لك.');
@@ -699,7 +776,7 @@ async function finale(reason, btn) {
   const gy = scene.L.groundY, x0 = player.x - camX, y0 = gy + Math.round(H * 0.11) - 48 * K;
   beam = { x0, y0, x1: pick.sx, y1: pick.sy, k: 0 };
   for (let k = 0; k <= 30; k++) { beam.k = k / 30; await sleep(calm ? 5 : 35); }
-  pick.lit = true; beam = null;
+  pick.lit = true; beam = null; voice('bless');
   player.dir = 1; player.raise = true;
   const bk = $('pbook');
   bk.replaceChildren(el('span', { class: 'star', 'aria-hidden': 'true' }, '★'), el('b', {}, state.teacher.name), reason ? el('span', { class: 'msg' }, reason) : null);
@@ -721,7 +798,7 @@ async function finale(reason, btn) {
 }
 function ended(title, text) {
   state.mode = 'ended'; showPad(false); $('title').hidden = true;
-  say(el('p', { class: 'px-who' }, 'نجمك يا معلّم'), el('p', { class: 'px-big' }, title), el('p', { class: 'px-line' }, text),
+  say(el('p', { class: 'px-who' }, 'المعلّم النجم'), el('p', { class: 'px-big' }, title), el('p', { class: 'px-line' }, text),
     el('div', { class: 'px-acts' }, el('a', { class: 'px-btn', href: '/about' }, 'عن المبادرة')));
 }
 
@@ -739,4 +816,4 @@ function ended(title, text) {
   if (!state.game.teachers.length) return ended('لم تبدأ اللعبة بعد', 'لم تُضف أسماء المعلّمين بعد. عُد لاحقاً.');
   titleScreen();
 })();
-window.__px = { state, player, input, get booths() { return booths; }, get stars() { return stars; }, get school() { return school; }, get doors() { return doors; } };
+window.__px = { state, player, input, get booths() { return booths; }, get stars() { return stars; }, get school() { return school; }, get doors() { return doors; }, get race() { return race; } };

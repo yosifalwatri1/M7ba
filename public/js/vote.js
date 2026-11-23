@@ -7,7 +7,7 @@
     FX.enter($('view-' + name));
   };
 
-  const input = $('name'), form = $('form'), sendBtn = $('send');
+  const form = $('form'), sendBtn = $('send');
   const nameError = $('name-error');
   let picked = null;      // {id, name} المعلّم الذي اختاره الطالب من الاقتراحات
   let suggestSeq = 0;
@@ -44,35 +44,31 @@
     return li;
   }
 
-  function renderSuggest(items) {
-    const list = $('suggest');
-    const key = items.map((i) => i.id).join(',');
-    const fresh = key !== list.dataset.key;
-    list.dataset.key = key;
-    list.replaceChildren(...items.map((it) => optionButton(it, (item) => {
-      picked = picked && picked.id === item.id ? null : item;
-      if (picked) input.value = item.name;
-      renderSuggest(items);
-    }, picked && picked.id === it.id)));
-    $('suggest-wrap').hidden = !items.length;
-    if (fresh && items.length) FX.list(list.children);
+  /* قائمة المعلّمين كما أضافتها المدرسة، مجمّعة حسب المادة: الطالب يختار ولا يبحث */
+  let teachers = [];
+  function renderPick() {
+    const groups = new Map();
+    for (const t of teachers) {
+      const k = t.subject || 'معلّمون آخرون';
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(t);
+    }
+    const keys = [...groups.keys()].sort((a, b) => (a === 'معلّمون آخرون') - (b === 'معلّمون آخرون') || a.localeCompare(b, 'ar'));
+    $('pick').replaceChildren(...keys.map((k) => {
+      const box = document.createElement('div');
+      const cap = document.createElement('p');
+      cap.className = 'suggest-cap'; cap.textContent = k;
+      const ul = document.createElement('ul');
+      ul.className = 'suggest';
+      ul.append(...groups.get(k).map((t) => optionButton(t, (item) => {
+        picked = picked && picked.id === item.id ? null : item;
+        setError(nameError, '');
+        renderPick();
+      }, picked && picked.id === t.id)));
+      box.append(cap, ul);
+      return box;
+    }));
   }
-
-  let timer;
-  input.addEventListener('input', () => {
-    picked = null;
-    setError(nameError, '');
-    clearTimeout(timer);
-    const q = input.value.trim();
-    if (q.length < 2) { renderSuggest([]); return; }
-    timer = setTimeout(async () => {
-      const seq = ++suggestSeq;
-      try {
-        const { items } = await api('/api/suggest?q=' + encodeURIComponent(q));
-        if (seq === suggestSeq) renderSuggest(items);
-      } catch { /* الاقتراحات اختيارية */ }
-    }, 160);
-  });
 
   async function submit(payload, errorEl) {
     if (busy) return;
@@ -112,20 +108,19 @@
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const name = input.value.replace(/\s+/g, ' ').trim();
-    if (name.replace(/\s/g, '').length < 2) {
-      setError(nameError, 'اكتب اسم المعلّم أولاً.');
-      input.focus();
+    if (!picked) {
+      setError(nameError, 'اختر المعلّم من القائمة أولاً.');
+      $('pick').querySelector('button')?.focus();
       return;
     }
-    submit(picked ? { name, teacherId: picked.id } : { name }, nameError);
+    submit({ name: picked.name, teacherId: picked.id }, nameError);
   });
 
   $('reason').addEventListener('input', () => { $('reason-count').textContent = $('reason').value.length + '/300'; });
 
   $('none').addEventListener('click', () => submit({ name: $('typed').textContent, force: true }, $('choose-error')));
-  $('go-quick').addEventListener('click', () => { show('form'); input.focus(); });
-  $('back').addEventListener('click', () => { show('form'); input.focus(); });
+  $('go-quick').addEventListener('click', () => { show('form'); });
+  $('back').addEventListener('click', () => { show('form'); });
 
   (async () => {
     try {
@@ -136,6 +131,8 @@
       if (!s.open) return show('closed');
       // لعبة البكسل تعمل على كل الأجهزة؛ ‎?quick‎ يفتح التصويت السريع مباشرة
       if (!new URLSearchParams(location.search).has('quick')) { location.replace('/play'); return; }
+      teachers = (await api('/api/game')).teachers || [];
+      renderPick();
       show('form');
     } catch {
       show('error');

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#2a1f33">
   <meta name="robots" content="noindex">
-  <title>نجمك يا معلّم</title>
+  <title>المعلّم النجم</title>
   <link rel="preload" href="/fonts/press-start-2p-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="/fonts/noto-kufi-arabic-arabic-600-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/app.css">
@@ -19,16 +19,17 @@
   <header class="px-hud">
     <div><span class="px-num" id="hud-score">0000</span><small id="hud-school">نقاط</small></div>
     <div class="mid"><span class="px-num" id="hud-stage">KW 1-1</span><small id="hud-stage-name">الكورنيش</small><span class="px-cards" id="hud-cards" role="status"></span></div>
-    <div><span class="px-num" id="hud-time">00:00</span><small><a href="/?quick=1">تصويت سريع</a></small></div>
+    <div><span class="px-num" id="hud-time">00:00</span><small><a href="/?quick=1">تصويت سريع</a></small><button class="px-snd" id="snd" type="button" aria-pressed="true">الصوت: يعمل</button></div>
   </header>
 
   <div class="px-title" id="title" hidden>
     <p class="px-kicker">مبادرة معلّمي المفضّل</p>
-    <h1>نجمك يا معلّم</h1>
+    <h1>المعلّم النجم</h1>
     <p class="px-start">اضغط للبدء</p>
   </div>
 
   <div class="px-board" id="board" hidden aria-live="polite"></div>
+  <div class="px-raceq" id="raceq" hidden aria-live="polite"></div>
   <section class="px-dlg" id="dlg" hidden aria-live="polite"></section>
 
   <div class="px-pad" id="pad" hidden>

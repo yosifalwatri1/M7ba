@@ -1,4 +1,4 @@
-/* رحلة «نجمك يا معلّم»
+/* رحلة «المعلّم النجم»
    مشهد سينمائي ← النوخذة يجهّز شخصيته وسفينته ← يبحر بحرية ويستطلع الجزر ← يرسو على جزيرة مادته
    ← الغوص (اختياري) ← يستطلع السماء بالمنظار ويختار نجم معلّمه ← الرسالة ← الوصول */
 import * as THREE from 'three';
@@ -213,7 +213,7 @@ async function cinematic() {
     cam.pos.copy(h).add(side(boat.heading).multiplyScalar(2.6 - e * 0.6)).add(fwd(boat.heading).multiplyScalar(4.4 - e * 0.8)).add(new THREE.Vector3(0, 0.3, 0));
     cam.look.copy(h).add(new THREE.Vector3(0, -0.6, 0));
   });
-  if (!skipped) { await cut(); captain.pose = 'wheel'; captain.setMood('smile'); say('<span class="cine-title">نجمك يا معلّم</span><span class="cine-sub">أبحر، استكشف الجزر، واختر نجم معلّمك</span>', true); }
+  if (!skipped) { await cut(); captain.pose = 'wheel'; captain.setMood('smile'); say('<span class="cine-title">المعلّم النجم</span><span class="cine-sub">أبحر، استكشف الجزر، واختر نجم معلّمك</span>', true); }
   // اللقطة ٤: الكاميرا ترتفع خلف السفينة وتكشف الجزر
   if (!skipped) await shot(4800, (e) => {
     place(0.72 + 0.28 * e);

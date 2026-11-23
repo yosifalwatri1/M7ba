@@ -132,3 +132,29 @@ body.px {
 .px-clear p { margin: 0; color: var(--px-dim); }
 .px-loading { position: fixed; inset: 0; z-index: 8; display: grid; place-content: center; background: #2a1f33; color: var(--px-gold); }
 @media (prefers-reduced-motion: reduce) { .px-start, .px-tag.target { animation: none; } }
+
+/* زر الصوت */
+.px-snd { margin-top: 2px; padding: 2px 6px; min-height: 26px; background: rgba(42,31,51,.8); color: var(--px-ink); border: 2px solid #6b5578; font: 600 11px var(--font); cursor: pointer; border-radius: 0; }
+.px-snd[aria-pressed="false"] { color: var(--px-dim); text-decoration: line-through; }
+
+/* السباق: السؤال وإجاباته حسب المسار */
+.px-raceq { position: fixed; z-index: 5; inset: calc(84px + env(safe-area-inset-top)) 10px auto; max-width: 520px; margin: 0 auto; padding: 10px 12px; text-align: center;
+  background: var(--px-bg); border: 3px solid var(--px-gold); box-shadow: 5px 5px 0 #000a; font-family: var(--font); }
+.px-raceq .q { margin: 0 0 8px; font-family: var(--display); font-size: 17px; line-height: 1.5; }
+.px-raceq .lanes { display: grid; gap: 4px; }
+.px-raceq .lane { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 10px; background: #352742; border-inline-start: 6px solid var(--c, #f6c453); }
+.px-raceq .lane:nth-child(1) { --c: #f6c453; } .px-raceq .lane:nth-child(2) { --c: #5fa8e8; } .px-raceq .lane:nth-child(3) { --c: #ef8f6a; }
+.px-raceq .lane small { color: var(--px-dim); font-size: 12px; }
+.px-raceq .lane b { font-size: 15px; }
+.px-raceq .lane.right { background: var(--px-green); color: #2a1f33; } .px-raceq .lane.right small { color: #2a1f33; }
+.px-raceq .lane.wrong { background: var(--px-red); color: #fff; }
+.px-raceq .hint { margin: 6px 0 0; font-size: 12px; color: var(--px-dim); }
+.px-tag.gate { padding: 1px 6px; font-size: 12px; background: #fbfaf6; color: #2a1f33; border-color: #2a1f33; pointer-events: none; }
+.px-tag.gate b { font-family: var(--font); font-size: 12px; }
+.px-tag.ob { padding: 0 5px; font-size: 10px; background: rgba(42,31,51,.85); color: #ffb3a8; border-width: 1px; border-color: #ff6f61; pointer-events: none; }
+.px-tag.ob.hit { opacity: .5; }
+.px-tag.rival { padding: 1px 6px; pointer-events: none; }
+.px-tag.rival b { font-size: 12px; }
+.px-tag.rival.cheat { border-color: #b06ac8; color: #e2b8f0; } .px-tag.rival.lazy { border-color: #9cc27a; color: #cfe6b8; }
+.px-tag.rival small { color: #ffb3a8; font-size: 10px; }
+.px-tag.finish { pointer-events: none; padding: 1px 6px; } .px-tag.finish b { font-size: 12px; }

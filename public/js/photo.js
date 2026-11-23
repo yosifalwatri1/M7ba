@@ -115,12 +115,35 @@ function drawBook(g, cx, bottom, it, L) {
   }
 }
 
+/* ---------- تاج أصحاب أعلى النقاط في التحدّي ---------- */
+let crowns = new Map();
+const RANKS = ['الأول', 'الثاني', 'الثالث'];
+function crown(g, cx, bottom, rank, score) {
+  const u = 6, x0 = Math.round(cx - 5.5 * u), y0 = bottom - 8 * u;
+  const shape = (dx, dy, col) => {
+    g.fillStyle = col;
+    for (const c of [0, 4, 8]) { g.fillRect(x0 + dx + (c + 1) * u, y0 + dy, u, u); g.fillRect(x0 + dx + c * u, y0 + dy + u, 3 * u, 2 * u); }
+    g.fillRect(x0 + dx, y0 + dy + 3 * u, 11 * u, 4 * u);
+  };
+  for (const [dx, dy] of [[-3, 0], [3, 0], [0, -3], [0, 3]]) shape(dx, dy, INK);
+  shape(0, 0, rank === 1 ? GOLD : rank === 2 ? '#d8d2c4' : '#d9935a');
+  g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(x0, y0 + 3 * u, 11 * u, u);
+  g.fillStyle = '#c8453b'; g.fillRect(x0 + 5 * u, y0 + 4 * u + 2, u, u);
+  g.fillStyle = '#2f7fbf'; g.fillRect(x0 + 2 * u, y0 + 4 * u + 2, u, u); g.fillRect(x0 + 8 * u, y0 + 4 * u + 2, u, u);
+  const text = `${RANKS[rank - 1]} · ${score} نقطة`;
+  g.font = `600 22px ${F_DISP}`; g.direction = 'rtl'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  g.lineWidth = 6; g.strokeStyle = INK; g.lineJoin = 'round'; g.strokeText(text, cx, y0 - 10);
+  g.fillStyle = GOLD; g.fillText(text, cx, y0 - 10);
+}
+
 /* ---------- الطالب: الكتاب أولاً ثم الشخصية فتظهر اليدان ممسكتين بحافته ---------- */
 function drawStudent(g, cx, ground, it, tall) {
   const K = tall ? TALL : SHORT, fr = raiseFrame(lookFor(it));
   const w = fr.width * K, h = fr.height * K, sx = Math.round(cx - w / 2), sy = ground - h;
   g.fillStyle = 'rgba(40,24,40,.35)'; g.fillRect(sx + 5 * K, ground - 2 * K, w - 10 * K, 3 * K);
-  drawBook(g, cx, sy + 2 * K, it, layoutBook(g, it));
+  const L = layoutBook(g, it);
+  drawBook(g, cx, sy + 2 * K, it, L);
+  if (crowns.has(it.id)) crown(g, cx - 7, sy + 2 * K - L.h - 6, crowns.get(it.id), it.score);
   g.imageSmoothingEnabled = false;
   g.drawImage(fr, sx, sy, w, h);
 }
@@ -188,7 +211,7 @@ function sheet(rows, info, page) {
   if (!page) {
     g.fillStyle = INK; g.fillRect(0, height - tail + 30, PW, tail - 30);
     g.direction = 'rtl'; g.textAlign = 'center'; g.font = `500 26px ${F_BODY}`; g.fillStyle = '#d8c2c9';
-    g.fillText('كل كتاب كلمة طالب لمعلّمه المفضّل · نجمك يا معلّم', PW / 2, height - 36);
+    g.fillText('كل كتاب كلمة طالب لمعلّمه المفضّل · المعلّم النجم', PW / 2, height - 36);
   }
   return c;
 }
@@ -206,11 +229,13 @@ function selection() {
   let items = data.items.filter((it) => (!tid || it.tid === tid) && (!only || it.reason.trim()));
   items = tid ? items : items.slice().sort((a, b) => a.teacher.localeCompare(b.teacher, 'ar') || a.id - b.id);
   const t = tid && data.items.find((it) => it.tid === tid);
-  return { items, info: { title: t ? `طلاب أضاؤوا نجم ${t.teacher}` : 'نجمك يا معلّم', school: data.school, count: items.length } };
+  return { items, info: { title: t ? `طلاب أضاؤوا نجم ${t.teacher}` : 'المعلّم النجم', school: data.school, count: items.length } };
 }
 function render() {
   const { items, info } = selection();
   current = { items, info, parts: [] };
+  // تاج لأعلى ثلاثة في نقاط التحدّي
+  crowns = new Map(items.filter((it) => it.score > 0).sort((a, b) => b.score - a.score).slice(0, 3).map((it, i) => [it.id, i + 1]));
   const view = $('view'), parts = $('parts');
   parts.replaceChildren(); parts.hidden = true;
   if (!items.length) {

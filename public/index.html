@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#1d4577">
   <meta name="robots" content="noindex">
-  <title>رشّح معلّمك المفضّل</title>
+  <title>المعلّم النجم</title>
   <link rel="preload" href="/fonts/noto-kufi-arabic-arabic-600-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="/css/app.css">
 </head>
@@ -18,7 +18,7 @@
     <!-- البداية: رحلة أو تصويت سريع -->
     <section id="view-intro" hidden>
       <p class="eyebrow">مبادرة معلّمي المفضّل</p>
-      <h1 class="display ballot-title">نجمك يا معلّم</h1>
+      <h1 class="display ballot-title">المعلّم النجم</h1>
       <p class="ballot-lede">لكل طالب كتاب، ولكل معلّم نجمة. اكتب كلمتك تحت نجمة المعلّم الذي أنار طريقك، وارفع كتابك.</p>
       <div class="intro-acts">
         <a class="btn btn-primary" id="go-play" href="/play">ابدأ اللعبة<small>دقيقتان على كورنيش الكويت</small></a>
@@ -29,20 +29,14 @@
     <!-- النموذج -->
     <section id="view-form" hidden>
       <p class="eyebrow">مبادرة معلّمي المفضّل</p>
-      <h1 class="display ballot-title" id="title">من هو معلّمك المفضّل؟</h1>
-      <p class="ballot-lede">اكتب اسم المعلّم الذي تراه الأفضل، وقل لنا لماذا. يكفي الاسم الأول واسم العائلة.</p>
+      <h1 class="display ballot-title" id="title">من أفضل معلّم عندك؟</h1>
+      <p class="ballot-lede">اختر أفضل معلّم عندك من قائمة المدرسة، وقل لنا لماذا.</p>
       <form id="form" novalidate>
-        <div class="field">
-          <label for="name">اسم المعلّم</label>
-          <input class="input" id="name" name="name" type="text" inputmode="text" autocomplete="off"
-                 autocapitalize="off" spellcheck="false" maxlength="80" enterkeyhint="next"
-                 placeholder="مثال: محمد العنزي" aria-describedby="name-error">
+        <fieldset class="field pick-field">
+          <legend>اختر المعلّم</legend>
+          <div id="pick" class="pick-groups"></div>
           <p class="error" id="name-error" role="alert" hidden></p>
-        </div>
-        <div id="suggest-wrap" hidden>
-          <p class="suggest-cap" id="suggest-cap">هل تقصد؟</p>
-          <ul class="suggest" id="suggest" aria-labelledby="suggest-cap"></ul>
-        </div>
+        </fieldset>
         <div class="field">
           <label for="reason">لماذا اخترته؟ <span class="opt">(اختياري)</span></label>
           <textarea class="textarea" id="reason" name="reason" maxlength="300" rows="3" aria-describedby="reason-hint"></textarea>
