@@ -261,11 +261,13 @@ export function playerFrames(look) {
   const frames = [];
   const robe = look.outfit === 'dishdasha';
   const top = look.color, jeans = '#3e4f63', jeansD = '#2c3a4a', skin = look.skin, skinD = '#00000033';
-  for (let f = 0; f < 6; f++) {                                        // ٠-٣ مشي، ٤ وقوف، ٥ فرح
-    const [c, g] = canvas(24, 48);
+  for (let f = 0; f < 7; f++) {                       // ٠-٣ مشي، ٤ وقوف، ٥ فرح، ٦ يرفع كتابه فوق رأسه (٢٤×٥٦)
+    const raise = f === 6;
+    const [c, g] = canvas(24, raise ? 56 : 48);
+    if (raise) g.translate(0, 8);
     const P = (x, y, w, h, col) => { g.fillStyle = col; g.fillRect(x, y, w, h); };
     const step = f < 4 ? [2, 0, -2, 0][f] : 0, bob = f < 4 && (f % 2 === 1) ? 1 : 0;
-    const cheer = f === 5;
+    const cheer = f === 5 || raise;
     // الساقان
     if (!robe) {
       P(9 + step, 32 + bob, 5, 12, jeansD); P(13 - step, 32 + bob, 5, 12, jeans);
@@ -280,8 +282,13 @@ export function playerFrames(look) {
     else { P(9, 29 + bob, 8, 3, '#00000030'); P(14, 19 + bob, 1, 6, '#bfbfbf'); }
     // الذراع
     const arm = cheer ? -12 : [-2, 0, 2, 0, 0][Math.min(4, f)];
-    if (cheer) { P(15, 6 + bob, 4, 13, top); P(15, 4 + bob, 4, 3, skin); P(5, 6 + bob, 4, 13, top); P(5, 4 + bob, 4, 3, skin); }
-    else { P(12 + arm, 20 + bob, 4, 11, top); P(12 + arm, 20 + bob, 1, 11, '#00000030'); P(12 + arm, 31 + bob, 4, 3, skin); }
+    if (raise) { P(3, -6, 4, 25, top); P(3, -8, 4, 3, skin); P(20, -6, 4, 25, top); P(20, -8, 4, 3, skin); P(20, -6, 1, 25, '#00000030'); }
+    else if (cheer) { P(15, 6 + bob, 4, 13, top); P(15, 4 + bob, 4, 3, skin); P(5, 6 + bob, 4, 13, top); P(5, 4 + bob, 4, 3, skin); }
+    else {
+      // الكتاب تحت الذراع
+      P(11 + arm, 23 + bob, 7, 11, '#2a1f33'); P(12 + arm, 24 + bob, 5, 9, '#c8453b'); P(16 + arm, 24 + bob, 1, 9, '#8f2f28'); P(12 + arm, 24 + bob, 5, 1, '#f3e7d3');
+      P(12 + arm, 20 + bob, 4, 11, top); P(12 + arm, 20 + bob, 1, 11, '#00000030'); P(12 + arm, 31 + bob, 4, 3, skin);
+    }
     // الرأس
     const hy = 4 + bob;
     P(8, hy, 12, 14, skin); P(8, hy + 11, 12, 3, skinD);

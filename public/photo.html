@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2a1f33">
+  <meta name="robots" content="noindex">
+  <title>الصورة الجماعية</title>
+  <link rel="preload" href="/fonts/noto-kufi-arabic-arabic-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="/css/app.css">
+  <style>
+    body.photo { background: #2a1f33; min-height: 100dvh; }
+    .ph-wrap { max-width: 1200px; margin: 0 auto; padding: 20px max(16px, env(safe-area-inset-right)) 40px max(16px, env(safe-area-inset-left)); display: grid; gap: 16px; }
+    .ph-head { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px; }
+    .ph-head h1 { margin: 0; font-size: clamp(26px, 5vw, 38px); }
+    .ph-bar { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; padding: 14px; background: #352742; border: 2px solid #6b5578; }
+    .ph-bar label { display: grid; gap: 4px; font-size: 13px; color: #d8c2c9; }
+    .ph-bar select { min-height: 44px; min-width: 220px; padding: 0 10px; background: #1c1424; color: #fff6e6; border: 2px solid #6b5578; font: 15px var(--font); }
+    .ph-bar .check { display: flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; color: #fff6e6; }
+    .ph-bar .check input { width: 20px; height: 20px; accent-color: #f6c453; }
+    .ph-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-inline-start: auto; }
+    .ph-note { margin: 0; color: #d8c2c9; font-size: 14px; }
+    .ph-view { background: #1c1424; border: 2px solid #6b5578; overflow: auto; max-height: 78vh; }
+    .ph-view canvas { display: block; width: 100%; height: auto; image-rendering: auto; }
+    .ph-empty { padding: 40px 20px; text-align: center; color: #d8c2c9; }
+    .ph-parts { display: flex; flex-wrap: wrap; gap: 8px; }
+  </style>
+</head>
+<body class="photo">
+  <main class="ph-wrap">
+    <header class="ph-head">
+      <div>
+        <p class="eyebrow" id="school">نجمك يا معلّم</p>
+        <h1 class="display">الصورة الجماعية</h1>
+      </div>
+      <a class="link" href="/admin">العودة إلى لوحة التحكم</a>
+    </header>
+
+    <section class="ph-bar" aria-label="خيارات الصورة">
+      <label for="teacher">مَن في الصورة؟
+        <select id="teacher"><option value="">كل الطلاب</option></select>
+      </label>
+      <label class="check" for="only-msg"><input type="checkbox" id="only-msg"> من كتبوا كلمة فقط</label>
+      <div class="ph-acts">
+        <button class="btn btn-primary" id="dl-png" type="button" disabled>تحميل الصورة PNG</button>
+        <button class="btn" id="dl-pdf" type="button" disabled>تحميل PDF</button>
+      </div>
+    </section>
+
+    <p class="ph-note" id="note" aria-live="polite">جارٍ تجهيز الصورة…</p>
+    <div class="ph-parts" id="parts" hidden></div>
+    <div class="ph-view" id="view"></div>
+  </main>
+  <script type="module" src="/js/photo.js"></script>
+</body>
+</html>

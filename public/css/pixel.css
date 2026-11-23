@@ -112,10 +112,23 @@ body.px {
 @keyframes blink { 50% { opacity: 0; } }
 
 /* المرحلة انتهت */
-.px-clear { position: fixed; inset: 0; z-index: 6; display: grid; place-content: center; justify-items: center; gap: 10px; text-align: center; padding: 20px;
-  background: radial-gradient(70% 45% at 50% 50%, rgba(28,20,36,.82), rgba(28,20,36,.2)); }
+.px-clear { position: fixed; inset: 0; z-index: 6; display: grid; place-content: start center; justify-items: center; gap: 8px; text-align: center;
+  padding: calc(78px + env(safe-area-inset-top)) 20px 20px; pointer-events: none;
+  background: linear-gradient(rgba(28,20,36,.88) 0, rgba(28,20,36,.6) 38%, rgba(28,20,36,0) 60%); }
+.px-clear > * { pointer-events: auto; }
 .px-clear .big { font-size: clamp(22px, 7vw, 40px); color: var(--px-gold); text-shadow: 3px 3px 0 #c8453b, 6px 6px 0 #000; margin: 0; }
-.px-clear h2 { margin: 6px 0 0; font-family: var(--display); font-size: clamp(22px, 6vw, 36px); line-height: 1.5; text-shadow: 3px 3px 0 #000; }
+.px-clear h2 { margin: 2px 0 0; font-family: var(--display); font-size: clamp(20px, 5.4vw, 32px); line-height: 1.5; text-shadow: 3px 3px 0 #000; }
+
+/* الكتاب المرفوع: نجمة واسم المعلّم، وكلمة الطالب تحتها */
+.px-pbook { position: fixed; left: 0; top: 0; z-index: 7; box-sizing: border-box; width: min(62vw, 250px); display: grid; justify-items: center; gap: 2px;
+  padding: 8px 18px 14px 12px; text-align: center; background: #c8453b; color: #fff6e6; border: 3px solid #2a1f33;
+  box-shadow: inset -7px 0 0 #8f2f28, inset 0 -6px 0 #f3e7d3, 5px 5px 0 #000a; font-family: var(--font); }
+.px-pbook .star { color: var(--px-gold); font-size: 24px; line-height: 1.1; text-shadow: 2px 2px 0 #2a1f33; }
+.px-pbook b { font-family: var(--display); font-size: 16px; line-height: 1.5; }
+.px-pbook .msg { font-size: 13px; line-height: 1.6; color: #ffe9d6; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.px-bookpage { display: grid; gap: 4px; padding: 10px 12px; border: 2px dashed #6b5578; background: #31243d; }
+.px-bookpage .px-big { margin: 0; text-align: center; }
+.px-bookstar { margin: 0; text-align: center; color: var(--px-gold); font-size: 26px; line-height: 1; text-shadow: 2px 2px 0 #000; }
 .px-clear p { margin: 0; color: var(--px-dim); }
 .px-loading { position: fixed; inset: 0; z-index: 8; display: grid; place-content: center; background: #2a1f33; color: var(--px-gold); }
 @media (prefers-reduced-motion: reduce) { .px-start, .px-tag.target { animation: none; } }

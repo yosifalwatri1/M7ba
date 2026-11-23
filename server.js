@@ -25,6 +25,7 @@ function serveStatic(req, res, pathname) {
   if (rel === '/play' || rel === '/play/') rel = '/play.html';
   if (rel === '/play3d' || rel === '/play3d/') rel = '/play3d.html';
   if (rel === '/sky' || rel === '/sky/') rel = '/sky.html';
+  if (rel === '/photo' || rel === '/photo/') rel = '/photo.html';
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
   if (!file.startsWith(PUBLIC_DIR + path.sep)) { res.writeHead(403); res.end(); return; }
   fs.readFile(file, (err, data) => {

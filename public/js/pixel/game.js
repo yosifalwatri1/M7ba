@@ -215,12 +215,15 @@ function draw() {
   }
   // اللاعب
   if (state.mode !== 'title' && state.mode !== 'load') {
-    const f = player.cheer ? 5 : player.moving ? Math.floor(player.walk) % 4 : 4;
-    const img = frames[f], w = 24 * K, h = 48 * K;
+    const f = player.raise ? 6 : player.cheer ? 5 : player.moving ? Math.floor(player.walk) % 4 : 4;
+    const img = frames[f], w = 24 * K, h = img.height * K;
     const sx = Math.round(player.x - camX - w / 2), sy = gy + Math.round(H * 0.11) - h;
     g.fillStyle = 'rgba(40,24,40,0.35)'; g.fillRect(sx + 4 * K, sy + h - 2 * K, w - 8 * K, 3 * K);     // الظل
     if (player.dir < 0) { g.save(); g.translate(sx + w, sy); g.scale(-1, 1); g.drawImage(img, 0, 0, w, h); g.restore(); }
     else g.drawImage(img, sx, sy, w, h);
+    // الكتاب المرفوع فوق الرأس: تمسكه اليدان من أسفله
+    const bk = $('pbook');
+    if (player.raise && !bk.hidden) bk.style.transform = `translate(-50%, -100%) translate(${(player.x - camX) * S}px, ${(sy + 2 * K) * S}px)`;
   }
   for (const p of fx) { g.globalAlpha = clamp(1 - p.t / p.life, 0, 1); g.fillStyle = p.c; g.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); }
   g.globalAlpha = 1;
@@ -324,9 +327,9 @@ async function start() {
   const line = el('p', { class: 'px-line' });
   const next = pxBtn('التالي ▸', null, 'small');
   say(el('p', { class: 'px-who' }, 'الراوي'), line, el('div', { class: 'px-acts' }, next));
-  const lines = ['في زمن البحر، كان «المعلّم» هو من يهدي السفينة بالنجوم.',
+  const lines = ['لكل طالب كتاب، ولكل معلّم نجمة تنتظر من يضيئها.',
     'أكشاك المواد على الكورنيش مقفلة، ومفاتيحها بطاقات من المدرسة. ادخل فصل مادتك، وجاوب، وخذ بطاقاتك.',
-    'سلّم البطاقات لكشك المادة لينفتح، ثم اختر نجم معلّمك.'];
+    'سلّم البطاقات لكشك المادة لينفتح، ثم اختر نجم معلّمك، واكتب كلمتك في كتابك.'];
   for (const l of lines) {
     let go; const p = new Promise((r) => { go = r; });
     next.onclick = go; onPress = go;
@@ -669,9 +672,10 @@ function message() {
   const ta = el('textarea', { class: 'px-input', id: 'reason', maxlength: 300, rows: 3, placeholder: 'ماذا يميّزه؟ ماذا تعلّمت منه؟' });
   const count = el('span', { class: 'px-count' }, '0/300');
   ta.addEventListener('input', () => { count.textContent = `${ta.value.length}/300`; });
-  const send = pxBtn(`أشعل نجم ${pick.t.name} ★`, () => finale(ta.value.trim(), send), 'go');
-  say(el('p', { class: 'px-who' }, `KW 1-4 · رسالتك إلى ${pick.t.name}`),
-    el('label', { class: 'px-line', for: 'reason' }, 'لماذا اخترته؟ (اختياري)'), ta, count,
+  const send = pxBtn('ارفع كتابك ★', () => finale(ta.value.trim(), send), 'go');
+  say(el('p', { class: 'px-who' }, 'KW 1-4 · كتابك'),
+    el('div', { class: 'px-bookpage' }, el('p', { class: 'px-bookstar', 'aria-hidden': 'true' }, '★'), el('p', { class: 'px-big' }, pick.t.name),
+      el('label', { class: 'px-line small', for: 'reason' }, 'اكتب كلمتك تحت النجمة: لماذا اخترته؟ (اختياري)'), ta, count),
     el('div', { class: 'px-acts' }, send, pxBtn('غيّر', () => { state.mode = 'night'; setStage('KW 1-3', 'السماء'); stars.forEach((o) => { o.dim = false; }); pick = null; showPad(true); skyDialog(state.subject.teachers); })));
   onPress = null;
 }
@@ -679,7 +683,7 @@ async function finale(reason, btn) {
   btn.disabled = true;
   let r;
   try {
-    r = await api('/api/vote', { teacherId: state.teacher.id, name: state.teacher.name, reason, subject: state.subject.all ? '' : state.subject.name, answers: state.boothAnswers[state.subject.name] || {} });
+    r = await api('/api/vote', { teacherId: state.teacher.id, name: state.teacher.name, reason, subject: state.subject.all ? '' : state.subject.name, answers: state.boothAnswers[state.subject.name] || {}, look: state.look });
   } catch (e) {
     if (e.status === 409) return ended('سبق أن رشّحت', 'سُجّل ترشيحك من هذا الجهاز من قبل. لكل طالب صوت واحد.');
     if (e.status === 403) return ended('التصويت مغلق', 'انتهت فترة الترشيح. شكراً لك.');
@@ -695,7 +699,11 @@ async function finale(reason, btn) {
   const gy = scene.L.groundY, x0 = player.x - camX, y0 = gy + Math.round(H * 0.11) - 48 * K;
   beam = { x0, y0, x1: pick.sx, y1: pick.sy, k: 0 };
   for (let k = 0; k <= 30; k++) { beam.k = k / 30; await sleep(calm ? 5 : 35); }
-  pick.lit = true; beam = null; player.cheer = true;
+  pick.lit = true; beam = null;
+  player.dir = 1; player.raise = true;
+  const bk = $('pbook');
+  bk.replaceChildren(el('span', { class: 'star', 'aria-hidden': 'true' }, '★'), el('b', {}, state.teacher.name), reason ? el('span', { class: 'msg' }, reason) : null);
+  bk.hidden = false;
   state.score += 1000; setScore();
   // ألعاب نارية بكسل
   const colors = ['#f6d79a', '#e9b44c', '#5cc0b5', '#ffffff', '#ef8f6a'];
@@ -708,7 +716,7 @@ async function finale(reason, btn) {
   state.cleared = true; clearTags();
   $('clear').hidden = false;
   $('clear-name').textContent = state.teacher.name;
-  $('clear-sub').textContent = p ? `وأهديته ${goldWord(p)}. كلمتك تصل، وأثرها يبقى.` : 'كلمتك تصل، وأثرها يبقى.';
+  $('clear-sub').textContent = `${p ? `وأهديته ${goldWord(p)}. ` : ''}رفعت كتابك، وصرت في الصورة الجماعية.`;
   $('clear-score').textContent = String(state.score).padStart(4, '0');
 }
 function ended(title, text) {
