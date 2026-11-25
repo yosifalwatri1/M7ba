@@ -418,6 +418,67 @@ async function start() {
   $('title').hidden = true;
   state.start = Date.now();
   unlock();
+  if (state.game.classes && state.game.classes.length && !state.seat) { register(); return; }
+  intro();
+}
+
+/* ======================================================================
+   التسجيل: الفصل ورقم الطالب في الكشف (صوت واحد لكل رقم، والتصويت سرّي)
+   ====================================================================== */
+const GRADES = { 10: 'العاشر', 11: 'الحادي عشر', 12: 'الثاني عشر', 9: 'التاسع' };
+function gradeOf(name) {
+  const m = String(name).match(/^\s*(\d+)/);
+  return m ? GRADES[m[1]] || `الصف ${m[1]}` : String(name).split(/[\/\-\s]/)[0] || 'الفصول';
+}
+function register() {
+  state.mode = 'register';
+  camX = 0; player.x = W * 0.42; player.dir = 1;
+  setStage('KW 1-1', 'التسجيل');
+  const groups = new Map();
+  for (const c of state.game.classes) { const g = gradeOf(c.name); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(c); }
+  let picked = null;
+  const roll = el('input', { class: 'px-input', id: 'roll', type: 'text', inputmode: 'numeric', autocomplete: 'off', maxlength: '3', 'aria-describedby': 'roll-hint roll-err' });
+  const hint = el('p', { class: 'px-line small', id: 'roll-hint' }, 'اختر فصلك أولاً.');
+  const err = el('p', { class: 'px-err', id: 'roll-err', role: 'alert', hidden: true });
+  const showErr = (m) => { err.textContent = m || ''; err.hidden = !m; };
+  const go = pxBtn('ابدأ ▸', submit, 'go');
+  const rows = [...groups].map(([g, list]) => el('div', { class: 'px-row' }, el('span', { class: 'px-label' }, g),
+    el('div', { class: 'px-opts' }, list.map((c) => el('button', {
+      type: 'button', class: 'px-opt', 'aria-pressed': 'false',
+      onclick: (e) => {
+        picked = c; showErr('');
+        dlg.querySelectorAll('.px-opts .px-opt').forEach((b) => b.setAttribute('aria-pressed', String(b === e.currentTarget)));
+        hint.textContent = `رقمك في كشف ${c.name}: من 1 إلى ${c.size}`;
+        roll.focus();
+      },
+    }, c.name)))));
+  roll.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+  roll.addEventListener('input', () => showErr(''));
+  say(el('p', { class: 'px-who' }, 'سجّل دخولك'),
+    el('p', { class: 'px-line' }, 'اختر فصلك، واكتب رقمك في كشف الفصل. تصويتك سرّي: لا يُربط رقمك بالمعلّم الذي تختاره ولا بكلمتك.'),
+    rows, el('label', { class: 'px-line', for: 'roll' }, 'رقمك في الكشف'), roll, hint, err,
+    el('div', { class: 'px-acts' }, go));
+  onPress = null;
+  let busy = false;
+  async function submit() {
+    if (busy) return;
+    if (!picked) { showErr('اختر فصلك من القائمة.'); return; }
+    const v = roll.value.trim();
+    if (!v) { showErr('اكتب رقمك في الكشف.'); roll.focus(); return; }
+    busy = true; go.disabled = true;
+    try {
+      const r = await api(`/api/seat?klass=${encodeURIComponent(picked.name)}&roll=${encodeURIComponent(v)}`);
+      if (r.used) { showErr(`الرقم ${r.roll} في ${r.klass} صوّت من قبل. تأكّد من رقمك، وإن كان رقمك فعلاً فراجع معلّمك.`); return; }
+      state.seat = { klass: r.klass, roll: r.roll };
+      $('hud-school').textContent = `${r.klass} · رقم ${r.roll}`;
+      intro();
+    } catch (e) {
+      showErr(e.message === 'Failed to fetch' ? 'تحقّق من اتصالك بالإنترنت ثم حاول مجدداً.' : e.message);
+    } finally { busy = false; go.disabled = false; }
+  }
+}
+
+async function intro() {
   state.mode = 'intro';
   camX = 0; player.x = -30; player.auto = W * 0.42; player.dir = 1;
   setStage('KW 1-1', 'شارع الخليج');
@@ -927,9 +988,9 @@ async function finale(reason, btn) {
   btn.disabled = true;
   let r;
   try {
-    r = await api('/api/vote', { teacherId: state.teacher.id, name: state.teacher.name, reason, subject: state.subject.all ? '' : state.subject.name, answers: state.boothAnswers[state.subject.name] || {}, look: state.look, score: state.score });
+    r = await api('/api/vote', { teacherId: state.teacher.id, name: state.teacher.name, reason, subject: state.subject.all ? '' : state.subject.name, answers: state.boothAnswers[state.subject.name] || {}, look: state.look, score: state.score, seat: state.seat });
   } catch (e) {
-    if (e.status === 409) return ended('سبق أن رشّحت', 'سُجّل ترشيحك من هذا الجهاز من قبل. لكل طالب صوت واحد.');
+    if (e.status === 409) return ended('سبق أن رشّحت', state.seat ? `الرقم ${state.seat.roll} في ${state.seat.klass} صوّت من قبل. لكل طالب صوت واحد.` : 'سُجّل ترشيحك من هذا الجهاز من قبل. لكل طالب صوت واحد.');
     if (e.status === 403) return ended('التصويت مغلق', 'انتهت فترة الترشيح. شكراً لك.');
     btn.disabled = false;
     say(el('p', { class: 'px-who' }, 'تعذّر الإرسال'), el('p', { class: 'px-line' }, e.message === 'Failed to fetch' ? 'تحقّق من اتصالك بالإنترنت ثم حاول مجدداً.' : e.message),

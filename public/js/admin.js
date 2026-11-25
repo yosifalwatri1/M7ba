@@ -100,7 +100,7 @@
   });
 
   // ---------- التبويبات ----------
-  const tabs = ['results', 'review', 'teachers', 'pearls', 'qr', 'settings'];
+  const tabs = ['results', 'review', 'teachers', 'classes', 'pearls', 'qr', 'settings'];
   let shown = null;
   function selectTab(name) {
     for (const t of tabs) {
@@ -112,6 +112,7 @@
     shown = name;
     if (name === 'qr' && data) renderPoster();
     if (name === 'pearls' && data) renderQuestions().catch(() => {});
+    if (name === 'classes') renderClasses().catch(() => {});
     try { sessionStorage.setItem('tab', name); } catch {}
   }
   tabs.forEach((t, i) => {
@@ -357,6 +358,40 @@
     ask({ title: `مادة ${t.name}`, ok: 'احفظ المادة', input: t.subject || '', label: 'المادة (اتركها فارغة لإزالتها)',
       run: (subject) => act('/api/admin/teachers/subject', { id: t.id, subject }, 'حُفظت المادة')() });
   }
+
+  // ---------- الفصول وأرقام الكشف ----------
+  let classesLoaded = false;
+  async function renderClasses() {
+    const { classes } = await api('/api/admin/classes');
+    if (!classesLoaded || !$('cls-lines').value.trim()) { $('cls-lines').value = classes.map((c) => `${c.name} | ${c.size}`).join('\n'); classesLoaded = true; }
+    $('free-klass').replaceChildren(...classes.map((c) => el('option', { value: c.name }, c.name)));
+    const total = classes.reduce((a, c) => a + c.size, 0), done = classes.reduce((a, c) => a + c.done.length, 0);
+    $('cls-count').textContent = classes.length ? `${done} من ${total} طالباً شاركوا` : '';
+    const box = $('cls-list');
+    if (!classes.length) { box.replaceChildren(emptyState('لا فصول بعد', 'أضف فصول المدرسة وعدد طلاب كل فصل ليسجّل الطالب برقمه في الكشف.', null, 'users-three')); return; }
+    box.replaceChildren(el('ul', { class: 'ledger troster' }, classes.map((c) => {
+      const missing = [];
+      for (let i = 1; i <= c.size; i++) if (!c.done.includes(i)) missing.push(i);
+      const pct = Math.round((c.done.length / c.size) * 100);
+      return el('li', {},
+        el('span', {}, el('b', {}, c.name), ' ', el('span', { class: 'meta' }, `${c.done.length} من ${c.size} (${pct}٪)`),
+          el('span', { class: 'meta', style: 'display:block' }, missing.length ? `لم يصوّتوا بعد: ${missing.join('، ')}` : 'شارك الفصل كاملاً ✓')),
+        el('span', { class: 'acts' }, el('span', { class: 'cls-bar', style: `--p:${pct}%`, 'aria-hidden': 'true' })));
+    })));
+  }
+  $('cls-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const r = await api('/api/admin/classes', { lines: $('cls-lines').value });
+      setError($('cls-error'), ''); toast(r.count ? `حُفظ ${r.count} فصلاً` : 'أُزيلت الفصول: صوت واحد لكل جهاز'); renderClasses();
+    } catch (err) { setError($('cls-error'), err.message); }
+  });
+  $('free-btn').addEventListener('click', async () => {
+    const klass = $('free-klass').value, roll = $('free-roll').value.trim();
+    if (!klass || !roll) return;
+    ask({ title: `تحرير الرقم ${roll} في ${klass}؟`, ok: 'حرّر الرقم', body: 'سيتمكّن صاحب الرقم من التصويت. الصوت السابق يبقى محسوباً.',
+      run: async () => { await api('/api/admin/seats/free', { klass, roll }); toast('حُرّر الرقم'); $('free-roll').value = ''; renderClasses(); } });
+  });
 
   // ---------- بنك الأسئلة ----------
   async function renderQuestions() {

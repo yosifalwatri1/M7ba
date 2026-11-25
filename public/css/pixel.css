@@ -159,3 +159,7 @@ body.px {
 .px-quotes small { font-size: 11px; color: var(--px-dim); }
 .px-tag.ring { padding: 2px 7px; }
 .px-tag.ring b { font-size: 12px; }
+
+/* التسجيل برقم الكشف */
+.px-err { margin: 4px 0 0; padding: 6px 10px; background: rgba(255,111,97,.15); border-inline-start: 4px solid var(--px-red); color: #ffd0c9; font-size: 13px; line-height: 1.6; }
+#roll { max-width: 10rem; font-family: "Pixel", var(--font); font-size: 16px; letter-spacing: 2px; direction: ltr; text-align: center; }

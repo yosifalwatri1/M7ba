@@ -32,6 +32,11 @@
       <h1 class="display ballot-title" id="title">من أفضل معلّم عندك؟</h1>
       <p class="ballot-lede">اختر أفضل معلّم عندك من قائمة المدرسة، وقل لنا لماذا.</p>
       <form id="form" novalidate>
+        <div class="seat-row" id="seat-row" hidden>
+          <div class="field"><label for="klass">فصلك</label><select class="input" id="klass"><option value="">اختر فصلك</option></select></div>
+          <div class="field"><label for="roll">رقمك في الكشف</label><input class="input" id="roll" inputmode="numeric" maxlength="3" autocomplete="off" aria-describedby="seat-error"></div>
+          <p class="error" id="seat-error" role="alert" hidden></p>
+        </div>
         <fieldset class="field pick-field">
           <legend>اختر المعلّم</legend>
           <div id="pick" class="pick-groups"></div>

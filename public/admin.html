@@ -45,6 +45,7 @@
       <button role="tab" id="t-results" aria-controls="tab-results" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="/icons.svg#chart-bar"/></svg>النتائج</button>
       <button role="tab" id="t-review" aria-controls="tab-review" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#list-checks"/></svg>المراجعة<span class="count" id="review-count" hidden></span></button>
       <button role="tab" id="t-teachers" aria-controls="tab-teachers" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#chalkboard-teacher"/></svg>المعلّمون</button>
+      <button role="tab" id="t-classes" aria-controls="tab-classes" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#users-three"/></svg>الفصول</button>
       <button role="tab" id="t-qr" aria-controls="tab-qr" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#qr-code"/></svg>الباركود</button>
       <button role="tab" id="t-pearls" aria-controls="tab-pearls" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#list-checks"/></svg>الأسئلة</button>
       <button role="tab" id="t-settings" aria-controls="tab-settings" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="/icons.svg#gear"/></svg>الإعدادات</button>
@@ -79,7 +80,7 @@
           <div class="field">
             <label for="add-names">الأسماء الكاملة مع المادة، معلّم في كل سطر</label>
             <textarea class="textarea" id="add-names" spellcheck="false" aria-describedby="add-hint" placeholder="محمد صالح العنزي | رياضيات"></textarea>
-            <p class="hint" id="add-hint">اكتب المادة بعد علامة | لتظهر جزيرتها في الرحلة. اكتب الاسم الثلاثي إن أمكن؛ كلّما كان أكمل كانت المطابقة أدقّ.</p>
+            <p class="hint" id="add-hint">اكتب المادة بعد علامة | ليظهر قسمها وجبلها في اللعبة. اكتب الاسم الثلاثي إن أمكن؛ كلّما كان أكمل كانت المطابقة أدقّ.</p>
           </div>
           <p class="error" id="add-error" role="alert" hidden></p>
           <button class="btn btn-primary" type="submit">أضف المعلّمين</button>
@@ -87,6 +88,35 @@
         <div>
           <div class="section-head"><h2>قائمة المعلّمين</h2><p class="meta" id="roster-count"></p></div>
           <div class="panel" id="roster"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- الفصول وأرقام الكشف -->
+    <section id="tab-classes" role="tabpanel" aria-labelledby="t-classes" hidden>
+      <div class="split">
+        <form class="stack" id="cls-form">
+          <h2 style="font-size:var(--t-h3)">فصول المدرسة</h2>
+          <div class="field">
+            <label for="cls-lines">فصل في كل سطر: اسم الفصل | عدد الطلاب</label>
+            <textarea class="textarea" id="cls-lines" dir="ltr" style="text-align:left" spellcheck="false" aria-describedby="cls-hint" placeholder="10/1 | 30&#10;10/2 | 28&#10;11/1 | 32"></textarea>
+            <p class="hint" id="cls-hint">عند إضافة الفصول يختار الطالب فصله ويكتب رقمه في الكشف قبل اللعب، ولكل رقم صوت واحد ولو من جهاز مشترك. التصويت سرّي: يُسجَّل أن الرقم شارك، ولا يُربط بالمعلّم الذي اختاره ولا بكلمته. اترك القائمة فارغة ليُحسب صوت واحد لكل جهاز.</p>
+          </div>
+          <p class="error" id="cls-error" role="alert" hidden></p>
+          <button class="btn btn-primary" type="submit">احفظ الفصول</button>
+          <div class="stack" style="margin-top:1.5rem">
+            <h2 style="font-size:var(--t-h3)">حرّر رقماً</h2>
+            <p class="hint">إن صوّت أحد برقم زميله خطأً، حرّر الرقم ليصوّت صاحبه. لا يُحذف الصوت الأول لأنه لا يُعرف أيّ صوت هو.</p>
+            <div class="row" style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:end">
+              <div class="field" style="flex:1;min-width:8rem"><label for="free-klass">الفصل</label><select class="input" id="free-klass"></select></div>
+              <div class="field" style="width:7rem"><label for="free-roll">رقم الكشف</label><input class="input" id="free-roll" inputmode="numeric" maxlength="3" autocomplete="off"></div>
+              <button class="btn" type="button" id="free-btn">حرّر الرقم</button>
+            </div>
+          </div>
+        </form>
+        <div>
+          <div class="section-head"><h2>المشاركة في كل فصل</h2><p class="meta" id="cls-count"></p></div>
+          <div class="panel" id="cls-list"></div>
         </div>
       </div>
     </section>

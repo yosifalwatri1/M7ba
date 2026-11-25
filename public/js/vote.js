@@ -45,7 +45,7 @@
   }
 
   /* قائمة المعلّمين كما أضافتها المدرسة، مجمّعة حسب المادة: الطالب يختار ولا يبحث */
-  let teachers = [];
+  let teachers = [], seated = false;
   function renderPick() {
     const groups = new Map();
     for (const t of teachers) {
@@ -97,6 +97,7 @@
       show('done');
       FX.celebrate();
     } catch (err) {
+      if (err.status === 409 && payload.seat) { setError(errorEl, err.message); return; }
       if (err.status === 409) { show('already'); return; }
       if (err.status === 403) { show('closed'); return; }
       setError(errorEl, err.message === 'Failed to fetch' ? 'لا يوجد اتصال. تحقّق من الإنترنت وحاول مجدداً.' : err.message);
@@ -113,7 +114,14 @@
       $('pick').querySelector('button')?.focus();
       return;
     }
-    submit({ name: picked.name, teacherId: picked.id }, nameError);
+    const payload = { name: picked.name, teacherId: picked.id };
+    if (seated) {
+      const klass = $('klass').value, roll = $('roll').value.trim();
+      if (!klass || !roll) { setError($('seat-error'), 'اختر فصلك واكتب رقمك في الكشف.'); (klass ? $('roll') : $('klass')).focus(); return; }
+      setError($('seat-error'), '');
+      payload.seat = { klass, roll };
+    }
+    submit(payload, seated ? $('seat-error') : nameError);
   });
 
   $('reason').addEventListener('input', () => { $('reason-count').textContent = $('reason').value.length + '/300'; });
@@ -131,7 +139,13 @@
       if (!s.open) return show('closed');
       // لعبة البكسل تعمل على كل الأجهزة؛ ‎?quick‎ يفتح التصويت السريع مباشرة
       if (!new URLSearchParams(location.search).has('quick')) { location.replace('/play'); return; }
-      teachers = (await api('/api/game')).teachers || [];
+      const g = await api('/api/game');
+      teachers = g.teachers || [];
+      seated = !!(g.classes && g.classes.length);
+      if (seated) {
+        $('seat-row').hidden = false;
+        $('klass').append(...g.classes.map((c) => Object.assign(document.createElement('option'), { value: c.name, textContent: `${c.name} (من 1 إلى ${c.size})` })));
+      }
       renderPick();
       show('form');
     } catch {
