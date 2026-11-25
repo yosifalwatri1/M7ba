@@ -358,29 +358,34 @@
       run: (subject) => act('/api/admin/teachers/subject', { id: t.id, subject }, 'حُفظت المادة')() });
   }
 
-  // ---------- بنك أسئلة الغوص ----------
+  // ---------- بنك الأسئلة ----------
   async function renderQuestions() {
     const { items } = await api('/api/admin/questions');
     const subjects = [...new Set(data.results.map((r) => r.subject).filter(Boolean))];
-    $('q-subjects').replaceChildren(...subjects.map((s) => el('option', { value: s })));
+    $('q-subjects').replaceChildren(...[...new Set([...subjects, ...items.map((q) => q.subject)])].map((s) => el('option', { value: s })));
+    $('q-lessons').replaceChildren(...[...new Set(items.map((q) => q.lesson).filter(Boolean))].map((s) => el('option', { value: s })));
     $('q-count').textContent = items.length ? `${items.length} سؤالاً` : '';
     const box = $('q-list');
     if (!items.length) {
-      box.replaceChildren(emptyState('لا أسئلة بعد', 'أضف أسئلة من منهج كل مادة. بدونها يتخطّى الطالب مرحلة الغوص.', null, 'list-checks'));
+      box.replaceChildren(emptyState('لا أسئلة بعد', 'أضف أسئلة من منهج كل مادة، أو أضف البنك الجاهز. بدونها يأخذ الطالب بطاقة حضور عند القمة.', null, 'list-checks'));
       return;
     }
     box.replaceChildren(el('ul', { class: 'ledger troster' }, items.map((q) => el('li', {},
-      el('span', {}, el('span', { class: 'meta' }, q.subject + ' · '), q.q, ' ',
+      el('span', {}, el('span', { class: 'meta' }, [q.subject, q.lesson].filter(Boolean).join(' · ') + ' · '), q.q, ' ',
         el('span', { class: 'meta' }, '(' + q.choices.map((c, i) => (i === q.answer ? `✓ ${c}` : c)).join('، ') + ')')),
       el('span', { class: 'acts' }, el('button', { class: 'link', onclick: () => ask({
         title: 'حذف هذا السؤال؟', ok: 'احذف السؤال', danger: true, body: q.q,
         run: async () => { await api('/api/admin/questions/delete', { id: q.id }); toast('حُذف السؤال'); renderQuestions(); },
       }) }, 'احذف'))))));
   }
+  $('q-seed').addEventListener('click', async () => {
+    try { const r = await api('/api/admin/questions/seed', {}); toast(r.added ? `أُضيف ${r.added} سؤالاً` : 'البنك الجاهز موجود كاملاً'); renderQuestions(); }
+    catch (err) { toast(err.message); }
+  });
   $('q-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const body = {
-      subject: $('q-subject').value.trim(), q: $('q-text').value.trim(),
+      subject: $('q-subject').value.trim(), lesson: $('q-lesson').value.trim(), q: $('q-text').value.trim(),
       choices: [$('q-c0').value, $('q-c1').value, $('q-c2').value].map((s) => s.trim()),
       answer: Number(document.querySelector('input[name="q-answer"]:checked').value),
     };

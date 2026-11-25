@@ -131,9 +131,10 @@
     <section id="tab-pearls" role="tabpanel" aria-labelledby="t-pearls" hidden>
       <div class="split">
         <form class="stack" id="q-form" novalidate>
-          <h2>سؤال جديد للفصل</h2>
-          <p class="sec">في اللعبة يدخل الطالب المدرسة ويجيب ثلاثة أسئلة على سبّورة فصل مادته؛ كل إجابة بطاقة يفتح بها كشك المادة، والصحيحة بطاقة ذهبية يهديها لمعلّمه. الأسئلة لا تغيّر صوته، ولا تمنعه من التصويت.</p>
+          <h2>سؤال جديد</h2>
+          <p class="sec">في اللعبة يصعد الطالب جبل المادة متخطّياً «الكسل» و«الغش»، وفي القمة يجيب سؤالاً من كل درس (ثلاثة دروس). كل إجابة بطاقة يفتح بها قسم المادة، والصحيحة بطاقة ذهبية يهديها لمعلّمه. الأسئلة لا تغيّر صوته.</p>
           <div class="field"><label for="q-subject">المادة</label><input class="input" id="q-subject" list="q-subjects" maxlength="40" autocomplete="off"><datalist id="q-subjects"></datalist></div>
+          <div class="field"><label for="q-lesson">الدرس</label><input class="input" id="q-lesson" list="q-lessons" maxlength="60" autocomplete="off" placeholder="مثال: قوانين نيوتن"><datalist id="q-lessons"></datalist></div>
           <div class="field"><label for="q-text">السؤال</label><input class="input" id="q-text" maxlength="200" autocomplete="off"></div>
           <fieldset class="field qchoices">
             <legend class="label">الخيارات (حدّد الصحيح)</legend>
@@ -146,6 +147,7 @@
         </form>
         <div>
           <div class="section-head"><h2>بنك الأسئلة</h2><p class="meta" id="q-count"></p></div>
+          <p class="sec">فيه بنك جاهز للمرحلة الثانوية (٩ مواد، ثلاثة دروس لكل مادة). راجعه وعدّله حسب منهجكم. <button class="link" type="button" id="q-seed">أضف الأسئلة الجاهزة الناقصة</button></p>
           <div class="panel" id="q-list"></div>
         </div>
       </div>

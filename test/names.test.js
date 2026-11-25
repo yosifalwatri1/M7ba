@@ -65,3 +65,19 @@ test('تجميع الأسماء بلا قائمة معلّمين', () => {
   assert.equal(g[0].count, 9);
   assert.equal(g[1].count, 6);
 });
+
+// بنك الأسئلة: الأسئلة الجاهزة سليمة، والتحقق من الإجابة يعمل
+const { bankQuestions } = require('../lib/question-bank');
+test('بنك الأسئلة: ٣ دروس لكل مادة، والإجابة الصحيحة ضمن الخيارات', () => {
+  const qs = bankQuestions();
+  const bySubject = new Map();
+  for (const q of qs) {
+    assert.ok(q.choices.length === 3 && q.answer >= 0 && q.answer < 3, q.q);
+    assert.equal(new Set(q.choices).size, 3, `خيارات مكرّرة: ${q.q}`);
+    if (!bySubject.has(q.subject)) bySubject.set(q.subject, new Set());
+    bySubject.get(q.subject).add(q.lesson);
+  }
+  for (const [s, lessons] of bySubject) assert.equal(lessons.size, 3, s);
+  // الخلط لا يجعل الإجابة الصحيحة في المكان نفسه دائماً
+  assert.ok(new Set(qs.map((q) => q.answer)).size > 1);
+});

@@ -85,19 +85,3 @@ export function ambience(level) {
   }
   waves.gain.setTargetAtTime(0.16 * level, ctx.currentTime, 0.6);
 }
-
-/** المحرّك في السباق: هدير من ضجيج يرتفع مع السرعة */
-let motor = null;
-export function engine(speed) {
-  if (!ctx) return;
-  if (!motor) {
-    const s = ctx.createBufferSource(); s.buffer = noise; s.loop = true;
-    const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 6;
-    const g = ctx.createGain(); g.gain.value = 0;
-    s.connect(f).connect(g).connect(master); s.start();
-    motor = { f, g };
-  }
-  const t = ctx.currentTime;
-  motor.f.frequency.setTargetAtTime(90 + speed * 260, t, 0.08);
-  motor.g.gain.setTargetAtTime(speed > 0 ? 0.08 + speed * 0.12 : 0, t, 0.15);
-}

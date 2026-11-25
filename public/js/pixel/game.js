@@ -5,8 +5,8 @@
 import { createScene } from './scene.js';
 import { playerFrames, booth, starSprite, LOOKS, rng } from './art.js';
 import { schoolFacade, shutter, cardSprite, createCorridor, createClassroom, centreFacade, createRingHall } from './school.js';
-import { createRace } from './race.js';
-import { unlock, voice, sfx, ambience, engine, soundOn, setSound } from './audio.js';
+import { createClimb } from './climb.js';
+import { unlock, voice, sfx, ambience, soundOn, setSound } from './audio.js';
 
 const $ = (id) => document.getElementById(id);
 const el = (tag, attrs = {}, ...kids) => {
@@ -29,6 +29,10 @@ const goldWord = (n, nom) => (n === 1 ? 'بطاقة ذهبية' : n === 2 ? (nom
 const teacherCount = (n) => `${n} ${n > 10 ? 'معلّماً' : n > 2 ? 'معلّمين' : n === 2 ? 'معلّمان' : 'معلّم'}`;
 const COLORS = ['#c8453b', '#2f7fbf', '#3f9d6a', '#7a4fa3', '#e08a2e', '#1f8f8a', '#b0456e'];
 const ALL = 'كل المعلّمين';
+/** المعادلات داخل جملة عربية تُعزل لتُقرأ من اليسار (y = 3x − 2 لا تنقلب) */
+const isoMath = (t) => (/[\u0600-\u06FF]/.test(t)
+  ? t.replace(/[A-Za-z0-9θ(][A-Za-z0-9θ\s=+\-−×÷√²()./°]*[A-Za-z0-9θ)²°]|[A-Za-z]/g, (m) => (/[A-Za-z=+−×÷√²θ]/.test(m) ? `\u2066${m.trim()}\u2069` : m))
+  : t);
 
 async function api(path, body) {
   const res = await fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) } : undefined);
@@ -113,8 +117,6 @@ addEventListener('keydown', (e) => {
   if (e.target.closest && e.target.closest('input, textarea')) return;
   if (['ArrowLeft', 'a', 'A'].includes(e.key)) input.left = true;
   if (['ArrowRight', 'd', 'D'].includes(e.key)) input.right = true;
-  if (['ArrowUp', 'w', 'W'].includes(e.key)) { input.up = true; if (state.mode === 'race') e.preventDefault(); }
-  if (['ArrowDown', 's', 'S'].includes(e.key)) { input.down = true; if (state.mode === 'race') e.preventDefault(); }
   if ([' ', 'Enter'].includes(e.key)) { if (e.target.closest && e.target.closest('button, a')) return; e.preventDefault(); press(); }
 });
 addEventListener('keyup', (e) => {
@@ -123,25 +125,20 @@ addEventListener('keyup', (e) => {
 });
 function hold(id, key) {
   const b = $(id);
-  // في السباق يصبح الزرّان ▲ و▼ لتغيير المسار
-  const on = (e) => { e.preventDefault(); if (state.mode === 'race') input[key === 'left' ? 'up' : 'down'] = true; else input[key] = true; b.classList.add('down'); };
+  const on = (e) => { e.preventDefault(); input[key] = true; b.classList.add('down'); };
   const off = () => { input[key] = false; b.classList.remove('down'); };
   b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
 }
 hold('pad-left', 'left'); hold('pad-right', 'right');
 $('pad-a').addEventListener('click', () => press());
-function setPad(race) {
-  $('pad-left').textContent = race ? '▲' : '◀'; $('pad-left').setAttribute('aria-label', race ? 'المسار الأعلى' : 'امشِ يساراً');
-  $('pad-right').textContent = race ? '▼' : '▶'; $('pad-right').setAttribute('aria-label', race ? 'المسار الأسفل' : 'امشِ يميناً');
-  $('pad-a').setAttribute('aria-label', race ? 'اقفز' : 'زر الاختيار');
-}
-// السحب لأعلى أو لأسفل على الشاشة يغيّر المسار في السباق
-let swipeY = null;
-screen.addEventListener('pointerdown', (e) => { swipeY = e.clientY; });
-screen.addEventListener('pointerup', (e) => {
-  if (state.mode === 'race' && swipeY != null) { const dy = e.clientY - swipeY; if (dy < -24) input.up = true; else if (dy > 24) input.down = true; else race?.jump(); }
-  swipeY = null;
+// على الجبل: لمس نصف الشاشة الأيسر أو الأيمن يوجّه الطالب
+let touchDir = null;
+screen.addEventListener('pointerdown', (e) => {
+  if (state.mode !== 'climb') return;
+  touchDir = e.clientX < innerWidth / 2 ? 'left' : 'right'; input[touchDir] = true;
 });
+const touchUp = () => { if (touchDir) { input[touchDir] = false; touchDir = null; } };
+screen.addEventListener('pointerup', touchUp); screen.addEventListener('pointercancel', touchUp); screen.addEventListener('pointerleave', touchUp);
 // زر الصوت
 function soundLabel() { $('snd').textContent = soundOn() ? 'الصوت: يعمل' : 'الصوت: مطفأ'; $('snd').setAttribute('aria-pressed', String(soundOn())); }
 $('snd').addEventListener('click', () => { unlock(); setSound(!soundOn()); soundLabel(); });
@@ -156,7 +153,7 @@ const tall = () => innerHeight > innerWidth * 1.2;
 function say(...kids) {
   dlg.replaceChildren(...kids.flat().filter((k) => k != null && k !== false));
   dlg.classList.toggle('top', tall() && ['walk', 'night', 'school'].includes(state.mode));
-  dlg.classList.toggle('low', state.mode === 'class');
+  dlg.classList.toggle('low', state.mode === 'class' || state.mode === 'summit');
   dlg.hidden = false;
 }
 function hush() { dlg.hidden = true; dlg.replaceChildren(); }
@@ -203,11 +200,12 @@ function loop(now) {
 }
 let ambLevel = -1;
 function update(dt) {
-  const amb = { walk: 1, busy: 1, intro: 1, dress: 1, night: 0.6, msg: 0.6, win: 0.6, school: 0.2, 'hall-busy': 0.2, class: 0.15, race: 0.5, ring: 0.25, 'ring-busy': 0.25 }[state.mode] ?? 0;
+  const amb = { walk: 1, busy: 1, intro: 1, dress: 1, night: 0.6, msg: 0.6, win: 0.6, school: 0.2, 'hall-busy': 0.2, class: 0.15, climb: 0.35, summit: 0.35, ring: 0.25, 'ring-busy': 0.25 }[state.mode] ?? 0;
   if (amb !== ambLevel) { ambLevel = amb; ambience(amb); }
-  if (state.mode === 'race' && race) {
-    race.update(dt, input);
+  if ((state.mode === 'climb' || state.mode === 'summit') && climb) {
+    climb.update(dt, input);
     fx = fx.filter((p) => { p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 40 * dt; return p.t < p.life; });
+    flying = flying.filter((f) => { f.t += dt; if (f.t >= f.dur) { f.done(); return false; } return true; });
     return;
   }
   // دائرة الأقسام: ◀ ▶ تدير الحلقة قسماً قسماً
@@ -246,10 +244,14 @@ function update(dt) {
 function draw() {
   if (!scene) return;
   let gy = scene.L.groundY;
-  if (state.mode === 'race' && race) {
-    race.draw(g, state.t);
+  if ((state.mode === 'climb' || state.mode === 'summit') && climb) {
+    climb.draw(g, state.t);
     for (const p of fx) { g.globalAlpha = clamp(1 - p.t / p.life, 0, 1); g.fillStyle = p.c; g.fillRect(Math.round(p.x), Math.round(p.y), 2, 2); }
     g.globalAlpha = 1;
+    for (const f of flying) {
+      const k = clamp(f.t / f.dur, 0, 1), e = 1 - (1 - k) * (1 - k);
+      g.drawImage(f.img, Math.round(f.x0 + (f.x1 - f.x0) * e - f.img.width / 2), Math.round(f.y0 + (f.y1 - f.y0) * e - Math.sin(k * Math.PI) * H * 0.08 - f.img.height / 2));
+    }
     if (fade > 0) { g.fillStyle = `rgba(20,10,24,${fade})`; g.fillRect(0, 0, W, H); }
     return;
   }
@@ -515,7 +517,7 @@ function schoolDialog() {
   }
   say(el('p', { class: 'px-who' }, 'المدرسة'),
     el('p', { class: 'px-big' }, name),
-    el('p', { class: 'px-line' }, 'ادخل، واختر فصل مادتك، واسبق «الغش» و«الكسل» في تحدّي المادة. الفوز يعطيك بطاقات تفتح قسمها.'),
+    el('p', { class: 'px-line' }, 'ادخل، واختر فصل مادتك، واصعد جبلها متخطّياً «الكسل» و«الغش». في القمة تجاوب أسئلة الدروس وتأخذ بطاقات تفتح قسمها.'),
     el('div', { class: 'px-acts' }, pxBtn('ادخل المدرسة (A)', enterSchool, 'go')));
   onPress = enterSchool;
 }
@@ -579,7 +581,7 @@ function ringDialog() {
   else {
     main = has ? pxBtn(`دُر إلى ${deptName(tb)} (A)`, () => ringTap(booths.indexOf(tb)), 'go') : pxBtn('اخرج إلى المدرسة (A)', leaveCentre, 'go');
     onPress = has ? () => ringTap(booths.indexOf(tb)) : leaveCentre;
-    note = has ? `بطاقاتك لـ${deptName(tb)}.` : b.all ? 'يفتحه الفوز بأي تحدّي في المدرسة.' : `يفتحه الفوز في سباق ${b.name} بالمدرسة.`;
+    note = has ? `بطاقاتك لـ${deptName(tb)}.` : b.all ? 'يفتحه صعود أي جبل في المدرسة.' : `يفتحه صعود جبل ${b.name} في المدرسة.`;
   }
   say(el('p', { class: 'px-who' }, 'KW 1-3 · دائرة الأقسام · ◀ ▶ لتدور'),
     el('p', { class: 'px-big' }, deptName(b)),
@@ -694,7 +696,7 @@ function doorTap(d, fromList) {
   if (hallNear === d || fromList) return enterClass(d);
   enterClass(d);
 }
-let race = null, retries = 0, classDoor = null, classQs = [], raceStartScore = 0;
+let climb = null, retries = 0, classDoor = null, classQs = [], climbStartScore = 0;
 async function enterClass(d) {
   if (state.mode !== 'school') return;
   state.mode = 'hall-busy'; hush(); clearTags(); showPad(false); onPress = null;
@@ -711,88 +713,118 @@ function boardSay(...kids) {
   board.replaceChildren(...kids); board.hidden = false;
 }
 const className = () => (classDoor.library ? 'المكتبة' : classDoor.name);
-/** تعريف بالتحدّي على السبّورة */
+const lessonsOf = () => [...new Set(classQs.map((q) => q.lesson).filter(Boolean))].slice(0, 3);
+const AR = ['١', '٢', '٣'];
+/** تعريف بالتحدّي على السبّورة: الجبل ومراحله الثلاث بعدد الدروس */
 function briefing() {
-  boardSay(el('small', {}, `تحدّي ${className()}`), el('span', {}, 'اسبق «الغش» و«الكسل» إلى خط النهاية'));
+  const ls = lessonsOf();
+  boardSay(el('small', {}, `جبل ${className()}`), el('span', {}, ls.length ? ls.map((l, i) => `${AR[i]}. ${l}`).join('   ') : 'اصعد إلى القمة'));
   const n = Math.min(3, classQs.length);
   say(el('p', { class: 'px-who' }, 'KW 1-2 · تحدّي المادة'),
-    el('p', { class: 'px-big' }, `سباق ${className()}`),
-    el('p', { class: 'px-line' }, '▲▼ لتغيير المسار، وA للقفز. تجنّب أصحاب السوء والجوال وورقة الغش والسهر، واجمع الكتب والنجوم.'),
-    n ? el('p', { class: 'px-line small' }, `في الطريق ${n === 1 ? 'بوابة سؤال' : n === 2 ? 'بوابتا أسئلة' : '3 بوابات أسئلة'}: ادخل مسار الإجابة الصحيحة لتنطلق أسرع وتأخذ بطاقة ذهبية.`) : null,
-    el('div', { class: 'px-acts' }, pxBtn('انطلق (A)', startRace, 'go'), pxBtn('فصل آخر', backToHall)));
-  onPress = startRace;
+    el('p', { class: 'px-big' }, `اصعد جبل ${className()}`),
+    el('p', { class: 'px-line' }, '◀ ▶ للتوجيه، والقفز تلقائي. أهم العوائق «الكسل» و«الغش»: اقفز فوق رؤوسهم لتغلبهم، ولا تلمسهم من الجنب.'),
+    el('p', { class: 'px-line small' }, `لك ثلاثة قلوب، وللجبل ثلاث مراحل بعدد الدروس. إن سقطت تخسر قلباً وترجع لآخر صخرة وقفت عليها. ${n ? `في القمة تجاوب ${n === 1 ? 'سؤالاً' : n === 2 ? 'سؤالين' : '3 أسئلة'} من الدروس، وكل إجابة صحيحة بطاقة ذهبية.` : 'من يصل القمة يأخذ بطاقته.'}`),
+    el('div', { class: 'px-acts' }, pxBtn('انطلق (A)', startClimb, 'go'), pxBtn('فصل آخر', backToHall)));
+  onPress = startClimb;
 }
-async function startRace() {
+/** تنبيه قصير أعلى الشاشة */
+let noticeTimer = null;
+function notice(title, text) {
+  const box = $('words');
+  box.replaceChildren(el('small', {}, title), text ? el('span', { class: 'w' }, text) : null);
+  box.hidden = false; clearTimeout(noticeTimer);
+  noticeTimer = setTimeout(() => { if (state.mode === 'climb') box.hidden = true; }, 2600);
+}
+async function startClimb() {
   if (state.mode !== 'class') return;
   hush(); onPress = null;
   state.cards = []; state.answers = {}; state.cardsFor = classDoor.library ? ALL : classDoor.subject; setCards();
-  raceStartScore = state.score;
+  climbStartScore = state.score;
+  const ls = lessonsOf();
   await wipe(() => {
     $('board').hidden = true;
-    state.mode = 'race'; setStage('KW 1-2', `سباق ${className()}`);
-    race = createRace({
-      W, H, scene, look: state.look, questions: classQs, retries, sound: { sfx, voice, engine },
+    state.mode = 'climb'; setStage('KW 1-2', `جبل ${className()}`);
+    climb = createClimb({
+      W, H, K, look: state.look, lessons: ls, retries, sound: { sfx, voice },
       ui: {
-        banner: $('raceq'),
         score: (n) => { state.score += n; setScore(); },
-        gate: async (q, lane) => {
-          state.answers[q.id] = lane;
-          const r = await api('/api/game/check', { id: q.id, choice: lane }).catch(() => null);
-          state.cards.push({ gold: !!(r && r.correct) }); setCards(); sfx.card();
-          return r;
-        },
         tag: (key, html, cls, x, y, vis) => { if (!vis || !html) return hideTag(key); const t = tag(key, html, cls); t.style.visibility = ''; place(t, x, y); },
-        finish: (rank, ahead) => raceOver(rank, ahead),
+        camp: (n) => notice(`المرحلة ${AR[n]}`, ls[n] || ''),
+        burst: (x, y, type) => {
+          const colors = type === 'lazy' ? ['#c4bce0', '#9a8fb8', '#ffffff'] : ['#fbfaf6', '#8aa0c8', '#c8453b'];
+          for (let i = 0; i < 22; i++) { const a = (i / 22) * Math.PI * 2, v = 20 + Math.random() * 30; fx.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 15, t: 0, life: 0.9, c: colors[i % 3] }); }
+          notice(type === 'lazy' ? 'غلبت الكسل!' : 'غلبت الغش!');
+        },
+        finish: (won) => climbOver(won),
       },
     });
   });
-  setPad(true); showPad(true);
-  onPress = () => race && race.jump();
+  showPad(true);
+  notice(`المرحلة ١`, ls[0] || '');
 }
-async function raceOver(rank, ahead = []) {
-  onPress = null; showPad(false);
-  race.stop();
-  const won = rank === 1;
-  if (won) {
-    voice('win');
-    if (!state.cards.length) { state.cards.push({ gold: false }); setCards(); }
-    state.score += 1000; setScore();
-    const colors = ['#f6d79a', '#e9b44c', '#5fcf86', '#ffffff'];
-    for (let i = 0; i < 40; i++) { const a = (i / 40) * Math.PI * 2, v = 30 + Math.random() * 40; fx.push({ x: W * 0.3, y: H * 0.45, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 20, t: 0, life: 1.3, c: colors[i % 4] }); }
-    await sleep(calm ? 100 : 1000);
-  } else voice('again');
-  await wipe(() => { clearTags(); race = null; setPad(false); state.mode = 'class'; camX = 0; setStage('KW 1-2', classDoor.library ? 'المكتبة' : `فصل ${classDoor.name}`); });
-  const tb = targetBooth();
-  if (won) {
-    const golds = state.cards.filter((c) => c.gold).length;
-    boardSay(el('small', {}, 'المركز الأول'), el('span', {}, `فزت! سبقت الغش والكسل${golds ? ` · ${goldWord(golds, true)}` : ''}`));
-    say(el('p', { class: 'px-who' }, `KW 1-2 · سباق ${className()}`),
-      el('p', { class: 'px-big' }, `أخذت ${cardWord(state.cards.length)}`),
-      el('p', { class: 'px-line' }, `${golds ? `منها ${goldWord(golds, true)}. ` : ''}سلّمها لـ${tb ? deptName(tb) : 'قسم كل المعلّمين'} في مركز جابر الثقافي لينفتح.`),
-      el('div', { class: 'px-acts' }, pxBtn('اخرج إلى شارع الخليج (A)', leaveSchool, 'go'), pxBtn('فصل آخر', backToHall)));
-    onPress = leaveSchool;
-  } else {
+async function climbOver(won) {
+  showPad(false); onPress = null; $('words').hidden = true;
+  if (!won) {
     retries++;
-    state.score = raceStartScore; setScore();
-    state.cards = []; setCards();
-    const who = ahead.length > 1 ? 'الغش والكسل' : ahead[0] || 'الغش';
-    boardSay(el('small', {}, `المركز ${rank === 2 ? 'الثاني' : 'الثالث'}`), el('span', {}, `${who} ${ahead.length > 1 ? 'وصلا' : 'وصل'} قبلك هذه المرة`));
-    say(el('p', { class: 'px-who' }, `KW 1-2 · سباق ${className()}`),
+    state.score = climbStartScore; setScore();
+    await wipe(() => { clearTags(); climb = null; state.mode = 'class'; camX = 0; setStage('KW 1-2', classDoor.library ? 'المكتبة' : `فصل ${classDoor.name}`); });
+    boardSay(el('small', {}, 'لم تصل القمة'), el('span', {}, 'غلبك «الكسل» و«الغش» هذه المرة'));
+    say(el('p', { class: 'px-who' }, `KW 1-2 · جبل ${className()}`),
       el('p', { class: 'px-big' }, 'لا تستسلم!'),
-      el('p', { class: 'px-line' }, 'تجنّب العقبات وادخل مسار الإجابة الصحيحة لتنطلق أسرع. المحاولة الجاية أسهل شوي.'),
-      el('div', { class: 'px-acts' }, pxBtn('حاول مرة ثانية (A)', startRace, 'go'), pxBtn('فصل آخر', backToHall)));
-    onPress = startRace;
+      el('p', { class: 'px-line' }, 'اقفز فوق رؤوسهم بدل ما تلمسهم من الجنب، وانتبه لأوراق الغش. المحاولة الجاية أسهل شوي.'),
+      el('div', { class: 'px-acts' }, pxBtn('حاول مرة ثانية (A)', startClimb, 'go'), pxBtn('فصل آخر', backToHall)));
+    onPress = startClimb;
+    return;
   }
+  // القمة: أسئلة الدروس الثلاثة
+  state.mode = 'summit'; setStage('KW 1-2', `قمة ${className()}`);
+  const colors = ['#f6d79a', '#e9b44c', '#5fcf86', '#ffffff'];
+  for (let i = 0; i < 40; i++) { const a = (i / 40) * Math.PI * 2, v = 30 + Math.random() * 40; fx.push({ x: W / 2, y: H * 0.35, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 20, t: 0, life: 1.3, c: colors[i % 4] }); }
+  const tb = targetBooth();
+  const award = async (gold) => {
+    const img = cardSprite(K, gold, tb ? tb.color : '#2f7fbf');
+    const [hx, hy] = hudCardsPoint();
+    sfx.card();
+    await fly(img, W / 2, H * 0.4, hx, hy, 0.8);
+    state.cards.push({ gold }); setCards();
+    state.score += gold ? 500 : 100; setScore();
+  };
+  if (!classQs.length) {
+    say(el('p', { class: 'px-who' }, 'القمة'), el('p', { class: 'px-big' }, 'وصلت القمة!'), el('p', { class: 'px-line' }, 'لا أسئلة لهذه المادة بعد؛ خذ بطاقة الصعود.'));
+    await award(false);
+  }
+  for (let i = 0; i < classQs.length; i++) {
+    const q = classQs[i];
+    const slots = el('p', { class: 'px-slots', 'aria-hidden': 'true' }, classQs.map((_, k2) => el('span', { class: k2 < state.cards.length ? (state.cards[k2].gold ? 'gold' : 'got') : '' })));
+    const choice = await new Promise((resolve) => say(slots,
+      el('p', { class: 'px-who' }, `القمة · سؤال ${AR[i] || i + 1}${q.lesson ? ` · ${q.lesson}` : ''}`),
+      el('p', { class: 'px-big', dir: 'auto' }, isoMath(q.q)),
+      el('div', { class: 'px-choices' }, q.choices.map((c, k2) => { const b = pxBtn(c, () => resolve(k2), 'choice'); b.setAttribute('dir', 'auto'); return b; }))));
+    state.answers[q.id] = choice;
+    const r = await api('/api/game/check', { id: q.id, choice }).catch(() => null);
+    const btns = dlg.querySelectorAll('.choice');
+    btns.forEach((b) => { b.disabled = true; });
+    if (r) { btns[r.answer]?.classList.add('right'); if (!r.correct) btns[choice]?.classList.add('wrong'); }
+    if (r && r.correct) voice('correct');
+    await award(!!(r && r.correct));
+    await sleep(calm ? 300 : 800);
+  }
+  const golds = state.cards.filter((c) => c.gold).length;
+  say(el('p', { class: 'px-who' }, `KW 1-2 · قمة ${className()}`),
+    el('p', { class: 'px-big' }, `أخذت ${cardWord(state.cards.length)}`),
+    el('p', { class: 'px-line' }, `${golds ? `منها ${goldWord(golds, true)}. ` : ''}سلّمها لـ${tb ? deptName(tb) : 'قسم كل المعلّمين'} في مركز جابر الثقافي لينفتح.`),
+    el('div', { class: 'px-acts' }, pxBtn('اخرج إلى شارع الخليج (A)', leaveSchool, 'go'), pxBtn('فصل آخر', backToHall)));
+  onPress = leaveSchool;
 }
 async function backToHall() {
-  if (state.mode !== 'class') return;
-  hush(); onPress = null;
+  if (state.mode !== 'class' && state.mode !== 'summit') return;
+  hush(); onPress = null; clearTags(); climb = null;
   const d = classDoor || doors.find((x) => x.library);
   await wipe(() => { $('board').hidden = true; state.mode = 'hall-busy'; player.x = d.x; camX = clamp(player.x - W * 0.38, 0, Math.max(0, hallEnd - W * 0.7)); setStage('KW 1-2', 'المدرسة'); });
   toHall();
 }
 async function leaveSchool() {
-  if (state.mode !== 'school' && state.mode !== 'class') return;
+  if (!['school', 'class', 'summit'].includes(state.mode)) return;
   const from = state.mode;
   hush(); clearTags(); showPad(false); onPress = null;
   if (from === 'school') { state.mode = 'hall-busy'; await walkTo(doors[0].x); }
@@ -943,4 +975,4 @@ function ended(title, text) {
   if (!state.game.teachers.length) return ended('لم تبدأ اللعبة بعد', 'لم تُضف أسماء المعلّمين بعد. عُد لاحقاً.');
   titleScreen();
 })();
-window.__px = { state, player, input, get booths() { return booths; }, get stars() { return stars; }, get school() { return school; }, get doors() { return doors; }, get race() { return race; } };
+window.__px = { state, player, input, get booths() { return booths; }, get stars() { return stars; }, get school() { return school; }, get doors() { return doors; }, get climb() { return climb; } };
