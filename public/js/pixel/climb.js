@@ -3,7 +3,9 @@
    - العائقان الأهم: «الكسل» (كتلة نائمة تُثقل قفزك) و«الغش» (يرمي أوراق الغش فتزلّ قدمك).
      القفز فوق رأسيهما من أعلى يغلبهما، ولمسهما من الجانب يُفقدك قلباً.
    - للجبل ثلاث مراحل بعدد الدروس الثلاثة، وفي بداية كل مرحلة مخيّم. السقوط يُفقدك قلباً ويعيدك إلى آخر صخرة وقفت عليها.
-   - ثلاثة قلوب. من يصل القمة يفوز، وهناك يجيب أسئلة الدروس. */
+   - أسئلة الدروس خلال الصعود: في كل مرحلة صخرة سؤال، وعند نهايتها سؤال (مخيّم المرحلة التالية، والأخير عند القمة).
+     الإجابة الصحيحة قفزة عالية وبطاقة ذهبية.
+   - ثلاثة قلوب. من يصل القمة يفوز. */
 import { canvas, rng, playerFrames, kuwaitTowers } from './art.js';
 
 const INK = '#2a1f33';
@@ -78,9 +80,35 @@ export function createClimb(o) {
   ledges.push(top);
   const papers = [];
 
+  /* ---------- أسئلة الدروس على الطريق ---------- */
+  const stageQs = [[], [], []], loose = [];
+  for (const q of o.questions || []) { const st = lessons.indexOf(q.lesson); (st >= 0 ? stageQs[st] : loose).push(q); }
+  for (const q of loose) stageQs[[0, 1, 2].sort((x, y) => stageQs[x].length - stageQs[y].length)[0]].push(q);
+  const ends = [ledges.find((L) => L.camp === 1), ledges.find((L) => L.camp === 2), top];
+  const qLedges = [];
+  stageQs.forEach((list, st) => {
+    if (!list.length) return;
+    const end = ends[st], lo = (st * A) / 3, hi = ((st + 1) * A) / 3;
+    const mids = list.slice(0, -1);
+    mids.forEach((q, j) => {
+      const target = lo + ((hi - lo) * (j + 1)) / (mids.length + 1);
+      const L = ledges.filter((x) => !x.camp && !x.summit && x.a > lo + H * 0.25 && x.a < hi - H * 0.25 && !x.vx && !x.qs)
+        .sort((x, y) => Math.abs(x.a - target) - Math.abs(y.a - target))[0];
+      const host = L || end;
+      if (L) {                                                           // صخرة السؤال: أعرض، وبلا عوائق
+        const hw = halfW(L.a), nw = Math.max(L.w, Math.min(W * 0.45, hw * 1.4));
+        L.x = Math.max(cx - hw + 4, Math.min(cx + hw - nw - 4, L.x + L.w / 2 - nw / 2)); L.w = nw;
+        for (let i = enemies.length - 1; i >= 0; i--) if (enemies[i].ledge === L) enemies.splice(i, 1);
+      }
+      (host.qs = host.qs || []).push({ q, stage: st });
+    });
+    (end.qs = end.qs || []).push({ q: list[list.length - 1], stage: st });
+  });
+  for (const L of ledges) if (L.qs) { qLedges.push(L); for (const it of items) if (it.ledge === L) it.got = true; }
+
   /* ---------- الحالة ---------- */
   const me = { x: cx, a: 0, va: JV, vx: 0, dir: 1, hearts: 3, inv: 0, lazyT: 0, cp: ledges[0] };
-  const S = { cam: 0, t: 0, done: false, won: false, phase: 'go', score: 0, shake: 0, goodCd: 0, best: 0 };
+  const S = { cam: 0, t: 0, done: false, won: false, phase: 'go', score: 0, shake: 0, goodCd: 0, best: 0, boostT: 0 };
   const add = (n) => { S.score += n; ui.score(n); };
   const yOf = (alt) => H * 0.88 - (alt - S.cam);
   const ledgeX = (L) => L.x;
@@ -106,7 +134,8 @@ export function createClimb(o) {
 
   function step(dt, input) {
     S.t += dt; S.shake = Math.max(0, S.shake - dt); S.goodCd = Math.max(0, S.goodCd - dt);
-    if (S.phase === 'summit' || S.phase === 'lost') { me.va = 0; return; }
+    if (S.phase === 'summit' || S.phase === 'lost' || S.phase === 'ask') { me.va = 0; return; }
+    S.boostT = Math.max(0, S.boostT - dt);
     if (S.t < 0.05 && !S.started) { S.started = true; sound.voice('start'); }
     // صخور متحرّكة
     for (const L of ledges) if (L.vx) { L.x += L.vx * dt; if (L.x < L.lo || L.x > L.hi) { L.vx *= -1; L.x = Math.max(L.lo, Math.min(L.hi, L.x)); } }
@@ -129,6 +158,7 @@ export function createClimb(o) {
           sound.sfx.step();
           if (L.camp && !L.reached) { L.reached = true; add(150); sound.sfx.gate(); ui.camp(L.camp); }
           if (!L.vx) me.cp = L;                                          // السقوط يعيدك إلى آخر صخرة وقفت عليها
+          if (L.qs && !L.asked) { askAt(L); return; }
           if (L.summit) { win(); return; }
           break;
         }
@@ -174,6 +204,17 @@ export function createClimb(o) {
       const ix = it.ledge.x + it.off, ia = it.ledge.a + 14;
       if (Math.abs(ix - me.x) < 10 && ia > me.a - 4 && ia < me.a + 40 * k) { it.got = true; sound.sfx.pick(); add(it.type === 'star' ? 200 : 100); }
     }
+  }
+  /** توقّف على صخرة السؤال: الصحيحة قفزة عالية، والخطأ قفزة عادية */
+  async function askAt(L) {
+    L.asked = true; S.phase = 'ask'; me.va = 0; me.a = L.a; me.vx = 0;
+    let ok = false;
+    L.results = [];
+    for (const { q, stage } of L.qs) { ok = await ui.ask(q, stage); L.results.push(ok); }
+    if (L.summit) { win(); return; }
+    S.phase = 'go';
+    me.va = JV * (ok ? 1.65 : 1); me.inv = Math.max(me.inv, ok ? 1.2 : 0.6);
+    if (ok) S.boostT = 1.3;
   }
   function win() {
     S.phase = 'summit'; me.va = 0; me.a = A; S.won = true;
@@ -234,6 +275,13 @@ export function createClimb(o) {
         for (let i = 0; i < 14; i++) { g.fillStyle = i % 4 < 2 ? '#c8453b' : '#f3e7d3'; g.fillRect(tx + i, y - Math.min(i, 13 - i) * 1.4 - 2, 1, Math.min(i, 13 - i) * 1.4 + 2); }
         g.fillStyle = INK; g.fillRect(x + w - 18, y - 26, 2, 26); g.fillStyle = '#f6c453'; g.fillRect(x + w - 16, y - 26, 10, 7);
       }
+      if (L.qs && !L.summit && !L.camp) {                                // لوح السؤال الحجري
+        const sx = Math.round(L.x + L.w / 2) - 8, done = L.asked;
+        g.fillStyle = INK; g.fillRect(sx - 1, y - 19, 18, 18);
+        g.fillStyle = done ? '#6b5f58' : '#a39488'; g.fillRect(sx, y - 18, 16, 16);
+        g.fillStyle = done ? (L.results && L.results.every(Boolean) ? '#5fcf86' : '#c9b49c') : '#f6c453';
+        for (const [px2, py2] of [[5, 3], [6, 3], [7, 3], [8, 3], [9, 4], [10, 5], [10, 6], [9, 7], [8, 8], [7, 9], [7, 10], [7, 13]]) g.fillRect(sx + px2 - 1, y - 18 + py2, 2, 1);
+      }
       if (L.summit) {
         g.fillStyle = INK; g.fillRect(Math.round(cx) - 1, y - 40, 3, 40);
         g.fillStyle = '#f6c453'; g.fillRect(Math.round(cx) + 2, y - 40, 18, 12); g.fillStyle = '#fff6e6'; g.fillRect(Math.round(cx) + 9, y - 36, 4, 4);
@@ -244,7 +292,12 @@ export function createClimb(o) {
       const y = yOf(L.a), lab = lessons[L.camp];
       ui.tag('camp' + L.camp, `<b>المرحلة ${L.camp === 1 ? '٢' : '٣'}</b>${lab ? `<small>${lab}</small>` : ''}`, 'camp', L.x + L.w * 0.62, y - 30, y > 60 && y < H + 10);
     });
-    ui.tag('summit', '<b>القمة</b><small>أسئلة الدروس</small>', 'camp gold', cx, yOf(A) - 44, yOf(A) > 50 && yOf(A) < H);
+    ui.tag('summit', top.qs ? '<b>القمة</b><small>سؤال أخير</small>' : '<b>القمة</b>', 'camp gold', cx, yOf(A) - 44, yOf(A) > 50 && yOf(A) < H);
+    qLedges.forEach((L, i) => {
+      if (L.camp || L.summit) return;
+      const y = yOf(L.a), st = L.qs[0].stage;
+      ui.tag('q' + i, L.asked ? `<b>${L.results && L.results.every(Boolean) ? 'أحسنت ✓' : 'تمّ'}</b>` : `<b>سؤال</b><small>${lessons[st] || `المرحلة ${['١', '٢', '٣'][st]}`}</small>`, 'qmark' + (L.asked ? ' done' : ''), L.x + L.w / 2, y - 22, y > 50 && y < H + 10);
+    });
     // الجوائز
     for (const it of items) {
       if (it.got) continue;
@@ -273,8 +326,9 @@ export function createClimb(o) {
       }
     });
     for (const p of papers) { const y = yOf(p.a); g.drawImage(paperImg, Math.round(p.x - 5), Math.round(y - 6 + Math.sin(p.x * 0.2) * 2)); }
-    // الطالب
-    if (!(me.inv > 0 && Math.floor(t * 12) % 2)) {
+    // الطالب (يومض بعد الإصابة فقط، لا بعد القفزة العالية)
+    if (S.boostT > 0) { g.fillStyle = '#f6d79a'; for (let i = 0; i < 6; i++) g.fillRect(Math.round(me.x - 6 + ((i * 37 + t * 90) % 12)), Math.round(yOf(me.a) + 2 + i * 6), 2, 3); }
+    if (!(me.inv > 0 && S.boostT <= 0 && Math.floor(t * 12) % 2)) {
       const img = frames[me.va > 0 ? 5 : 4], w = 24 * k, h = 48 * k;
       const x = Math.round(me.x - w / 2), y = Math.round(yOf(me.a) - h);
       if (me.dir < 0) { g.save(); g.translate(x + w, y); g.scale(-1, 1); g.drawImage(img, 0, 0, w, h); g.restore(); }

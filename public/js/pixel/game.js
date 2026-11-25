@@ -153,7 +153,7 @@ const tall = () => innerHeight > innerWidth * 1.2;
 function say(...kids) {
   dlg.replaceChildren(...kids.flat().filter((k) => k != null && k !== false));
   dlg.classList.toggle('top', tall() && ['walk', 'night', 'school'].includes(state.mode));
-  dlg.classList.toggle('low', state.mode === 'class' || state.mode === 'summit');
+  dlg.classList.toggle('low', ['class', 'summit', 'climb'].includes(state.mode));
   dlg.hidden = false;
 }
 function hush() { dlg.hidden = true; dlg.replaceChildren(); }
@@ -702,7 +702,7 @@ async function enterClass(d) {
   state.mode = 'hall-busy'; hush(); clearTags(); showPad(false); onPress = null;
   await walkTo(d.x);
   sfx.door();
-  const req = api('/api/game/questions?subject=' + encodeURIComponent(d.subject || '')).catch(() => ({ items: [] }));
+  const req = api('/api/game/questions?per=2&subject=' + encodeURIComponent(d.subject || '')).catch(() => ({ items: [] }));
   await wipe(() => { state.mode = 'class'; player.x = Math.round(W * (tall() ? 0.2 : 0.5)); player.dir = 1; camX = 0; setStage('KW 1-2', d.library ? 'المكتبة' : `فصل ${d.name}`); });
   classQs = (await req).items || []; classDoor = d; retries = 0;
   briefing();
@@ -719,11 +719,11 @@ const AR = ['١', '٢', '٣'];
 function briefing() {
   const ls = lessonsOf();
   boardSay(el('small', {}, `جبل ${className()}`), el('span', {}, ls.length ? ls.map((l, i) => `${AR[i]}. ${l}`).join('   ') : 'اصعد إلى القمة'));
-  const n = Math.min(3, classQs.length);
+  const n = classQs.length;
   say(el('p', { class: 'px-who' }, 'KW 1-2 · تحدّي المادة'),
     el('p', { class: 'px-big' }, `اصعد جبل ${className()}`),
     el('p', { class: 'px-line' }, '◀ ▶ للتوجيه، والقفز تلقائي. أهم العوائق «الكسل» و«الغش»: اقفز فوق رؤوسهم لتغلبهم، ولا تلمسهم من الجنب.'),
-    el('p', { class: 'px-line small' }, `لك ثلاثة قلوب، وللجبل ثلاث مراحل بعدد الدروس. إن سقطت تخسر قلباً وترجع لآخر صخرة وقفت عليها. ${n ? `في القمة تجاوب ${n === 1 ? 'سؤالاً' : n === 2 ? 'سؤالين' : '3 أسئلة'} من الدروس، وكل إجابة صحيحة بطاقة ذهبية.` : 'من يصل القمة يأخذ بطاقته.'}`),
+    el('p', { class: 'px-line small' }, `لك ثلاثة قلوب، وللجبل ثلاث مراحل بعدد الدروس. إن سقطت تخسر قلباً وترجع لآخر صخرة وقفت عليها. ${n ? `في الطريق ${n} أسئلة من الدروس على صخور الأسئلة والمخيّمات والقمة: الإجابة الصحيحة تقفز بك عالياً وتعطيك بطاقة ذهبية.` : 'من يصل القمة يأخذ بطاقته.'}`),
     el('div', { class: 'px-acts' }, pxBtn('انطلق (A)', startClimb, 'go'), pxBtn('فصل آخر', backToHall)));
   onPress = startClimb;
 }
@@ -731,25 +731,61 @@ function briefing() {
 let noticeTimer = null;
 function notice(title, text) {
   const box = $('words');
-  box.replaceChildren(el('small', {}, title), text ? el('span', { class: 'w' }, text) : null);
+  box.replaceChildren(...[el('small', {}, title), text ? el('span', { class: 'w' }, text) : null].filter(Boolean));
   box.hidden = false; clearTimeout(noticeTimer);
   noticeTimer = setTimeout(() => { if (state.mode === 'climb') box.hidden = true; }, 2600);
+}
+/** بطاقة تطير إلى الشريط العلوي: ذهبية للإجابة الصحيحة */
+async function awardCard(gold) {
+  const tb = targetBooth();
+  const img = cardSprite(K, gold, tb ? tb.color : '#2f7fbf');
+  const [hx, hy] = hudCardsPoint();
+  sfx.card();
+  await fly(img, W / 2, H * 0.4, hx, hy, 0.8);
+  state.cards.push({ gold }); setCards();
+  state.score += gold ? 500 : 100; setScore();
+}
+/** سؤال على صخرة الجبل: يتوقّف الصعود حتى يجيب */
+async function askOnMountain(q, stage) {
+  showPad(false); input.left = input.right = false;
+  const total = classQs.length, ls = lessonsOf();
+  const slots = el('p', { class: 'px-slots', 'aria-hidden': 'true' }, classQs.map((_, i) => el('span', { class: i < state.cards.length ? (state.cards[i].gold ? 'gold' : 'got') : '' })));
+  const n = state.cards.length + 1;
+  const choice = await new Promise((resolve) => say(slots,
+    el('p', { class: 'px-who' }, `سؤال ${n} من ${total} · ${q.lesson || ls[stage] || `المرحلة ${AR[stage]}`}`),
+    el('p', { class: 'px-big', dir: 'auto' }, isoMath(q.q)),
+    el('div', { class: 'px-choices' }, q.choices.map((c, k2) => { const b = pxBtn(c, () => resolve(k2), 'choice'); b.setAttribute('dir', 'auto'); return b; }))));
+  state.answers[q.id] = choice;
+  const r = await api('/api/game/check', { id: q.id, choice }).catch(() => null);
+  const btns = dlg.querySelectorAll('.choice');
+  btns.forEach((b) => { b.disabled = true; });
+  const ok = !!(r && r.correct);
+  if (r) { btns[r.answer]?.classList.add('right'); if (!ok) btns[choice]?.classList.add('wrong'); }
+  if (ok) voice('correct');
+  await awardCard(ok);
+  await sleep(calm ? 300 : ok ? 700 : 1500);
+  hush();
+  if (state.mode === 'climb') { showPad(true); if (ok) notice('قفزة عالية!', 'إجابة صحيحة'); }
+  return ok;
 }
 async function startClimb() {
   if (state.mode !== 'class') return;
   hush(); onPress = null;
   state.cards = []; state.answers = {}; state.cardsFor = classDoor.library ? ALL : classDoor.subject; setCards();
   climbStartScore = state.score;
+  // محاولة جديدة: أسئلة جديدة من الدروس نفسها
+  if (retries > 0) classQs = (await api('/api/game/questions?per=2&subject=' + encodeURIComponent(classDoor.subject || '')).catch(() => ({ items: classQs }))).items || classQs;
   const ls = lessonsOf();
   await wipe(() => {
     $('board').hidden = true;
     state.mode = 'climb'; setStage('KW 1-2', `جبل ${className()}`);
     climb = createClimb({
-      W, H, K, look: state.look, lessons: ls, retries, sound: { sfx, voice },
+      W, H, K, look: state.look, lessons: ls, questions: classQs, retries, sound: { sfx, voice },
       ui: {
         score: (n) => { state.score += n; setScore(); },
         tag: (key, html, cls, x, y, vis) => { if (!vis || !html) return hideTag(key); const t = tag(key, html, cls); t.style.visibility = ''; place(t, x, y); },
         camp: (n) => notice(`المرحلة ${AR[n]}`, ls[n] || ''),
+        ask: (q, stage) => askOnMountain(q, stage),
         burst: (x, y, type) => {
           const colors = type === 'lazy' ? ['#c4bce0', '#9a8fb8', '#ffffff'] : ['#fbfaf6', '#8aa0c8', '#c8453b'];
           for (let i = 0; i < 22; i++) { const a = (i / 22) * Math.PI * 2, v = 20 + Math.random() * 30; fx.push({ x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 15, t: 0, life: 0.9, c: colors[i % 3] }); }
@@ -763,55 +799,28 @@ async function startClimb() {
   notice(`المرحلة ١`, ls[0] || '');
 }
 async function climbOver(won) {
-  showPad(false); onPress = null; $('words').hidden = true;
+  showPad(false); onPress = null; $('words').hidden = true; hush();
   if (!won) {
     retries++;
     state.score = climbStartScore; setScore();
+    state.cards = []; setCards();
     await wipe(() => { clearTags(); climb = null; state.mode = 'class'; camX = 0; setStage('KW 1-2', classDoor.library ? 'المكتبة' : `فصل ${classDoor.name}`); });
     boardSay(el('small', {}, 'لم تصل القمة'), el('span', {}, 'غلبك «الكسل» و«الغش» هذه المرة'));
     say(el('p', { class: 'px-who' }, `KW 1-2 · جبل ${className()}`),
       el('p', { class: 'px-big' }, 'لا تستسلم!'),
-      el('p', { class: 'px-line' }, 'اقفز فوق رؤوسهم بدل ما تلمسهم من الجنب، وانتبه لأوراق الغش. المحاولة الجاية أسهل شوي.'),
+      el('p', { class: 'px-line' }, 'اقفز فوق رؤوسهم بدل ما تلمسهم من الجنب، وانتبه لأوراق الغش. المحاولة الجاية أسهل شوي، وأسئلتها جديدة.'),
       el('div', { class: 'px-acts' }, pxBtn('حاول مرة ثانية (A)', startClimb, 'go'), pxBtn('فصل آخر', backToHall)));
     onPress = startClimb;
     return;
   }
-  // القمة: أسئلة الدروس الثلاثة
+  // القمة
   state.mode = 'summit'; setStage('KW 1-2', `قمة ${className()}`);
   const colors = ['#f6d79a', '#e9b44c', '#5fcf86', '#ffffff'];
   for (let i = 0; i < 40; i++) { const a = (i / 40) * Math.PI * 2, v = 30 + Math.random() * 40; fx.push({ x: W / 2, y: H * 0.35, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 20, t: 0, life: 1.3, c: colors[i % 4] }); }
-  const tb = targetBooth();
-  const award = async (gold) => {
-    const img = cardSprite(K, gold, tb ? tb.color : '#2f7fbf');
-    const [hx, hy] = hudCardsPoint();
-    sfx.card();
-    await fly(img, W / 2, H * 0.4, hx, hy, 0.8);
-    state.cards.push({ gold }); setCards();
-    state.score += gold ? 500 : 100; setScore();
-  };
-  if (!classQs.length) {
-    say(el('p', { class: 'px-who' }, 'القمة'), el('p', { class: 'px-big' }, 'وصلت القمة!'), el('p', { class: 'px-line' }, 'لا أسئلة لهذه المادة بعد؛ خذ بطاقة الصعود.'));
-    await award(false);
-  }
-  for (let i = 0; i < classQs.length; i++) {
-    const q = classQs[i];
-    const slots = el('p', { class: 'px-slots', 'aria-hidden': 'true' }, classQs.map((_, k2) => el('span', { class: k2 < state.cards.length ? (state.cards[k2].gold ? 'gold' : 'got') : '' })));
-    const choice = await new Promise((resolve) => say(slots,
-      el('p', { class: 'px-who' }, `القمة · سؤال ${AR[i] || i + 1}${q.lesson ? ` · ${q.lesson}` : ''}`),
-      el('p', { class: 'px-big', dir: 'auto' }, isoMath(q.q)),
-      el('div', { class: 'px-choices' }, q.choices.map((c, k2) => { const b = pxBtn(c, () => resolve(k2), 'choice'); b.setAttribute('dir', 'auto'); return b; }))));
-    state.answers[q.id] = choice;
-    const r = await api('/api/game/check', { id: q.id, choice }).catch(() => null);
-    const btns = dlg.querySelectorAll('.choice');
-    btns.forEach((b) => { b.disabled = true; });
-    if (r) { btns[r.answer]?.classList.add('right'); if (!r.correct) btns[choice]?.classList.add('wrong'); }
-    if (r && r.correct) voice('correct');
-    await award(!!(r && r.correct));
-    await sleep(calm ? 300 : 800);
-  }
-  const golds = state.cards.filter((c) => c.gold).length;
+  if (!state.cards.length) await awardCard(false);                    // مادة بلا أسئلة: بطاقة الصعود
+  const tb = targetBooth(), golds = state.cards.filter((c) => c.gold).length;
   say(el('p', { class: 'px-who' }, `KW 1-2 · قمة ${className()}`),
-    el('p', { class: 'px-big' }, `أخذت ${cardWord(state.cards.length)}`),
+    el('p', { class: 'px-big' }, `وصلت القمة! أخذت ${cardWord(state.cards.length)}`),
     el('p', { class: 'px-line' }, `${golds ? `منها ${goldWord(golds, true)}. ` : ''}سلّمها لـ${tb ? deptName(tb) : 'قسم كل المعلّمين'} في مركز جابر الثقافي لينفتح.`),
     el('div', { class: 'px-acts' }, pxBtn('اخرج إلى شارع الخليج (A)', leaveSchool, 'go'), pxBtn('فصل آخر', backToHall)));
   onPress = leaveSchool;
@@ -937,7 +946,7 @@ async function finale(reason, btn) {
   pick.lit = true; beam = null; voice('bless');
   player.dir = 1; player.raise = true;
   const bk = $('pbook');
-  bk.replaceChildren(el('span', { class: 'star', 'aria-hidden': 'true' }, '★'), el('b', {}, state.teacher.name), reason ? el('span', { class: 'msg' }, reason) : null);
+  bk.replaceChildren(...[el('span', { class: 'star', 'aria-hidden': 'true' }, '★'), el('b', {}, state.teacher.name), reason ? el('span', { class: 'msg' }, reason) : null].filter(Boolean));
   bk.hidden = false;
   state.score += 1000; setScore();
   // ألعاب نارية بكسل

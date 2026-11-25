@@ -140,6 +140,9 @@ body.px {
 /* الجبل: أسماء المراحل والعوائق */
 .px-tag.camp { padding: 2px 7px; pointer-events: none; border-color: var(--px-gold); }
 .px-tag.camp b { font-size: 12px; } .px-tag.camp small { font-size: 10px; }
+.px-tag.qmark { padding: 2px 7px; pointer-events: none; border-color: var(--px-gold); background: var(--px-gold); color: #2a1f33; }
+.px-tag.qmark b { font-size: 12px; } .px-tag.qmark small { font-size: 10px; color: #2a1f33; }
+.px-tag.qmark.done { background: rgba(42,31,51,.85); color: var(--px-green); border-color: var(--px-green); }
 .px-tag.foe { padding: 0 5px; font-size: 10px; pointer-events: none; border-width: 1px; background: rgba(42,31,51,.85); }
 .px-tag.foe b { font-size: 11px; font-family: var(--font); }
 .px-tag.foe.lazy { border-color: #9a8fb8; color: #d9d2f0; } .px-tag.foe.cheat { border-color: #ff6f61; color: #ffb3a8; }
