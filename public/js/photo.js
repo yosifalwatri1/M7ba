@@ -19,6 +19,7 @@ const SCENE_H = 800, GROUND0 = 704, ROW_H = 560;     // الصف الأول عل
 const MAX_ROWS = 45;                                 // حدّ الصورة الواحدة (٣٦٠ طالباً)؛ الأكثر يُقسَّم أجزاءً
 
 const people = (n) => (n === 1 ? 'مشارك واحد' : n === 2 ? 'مشاركان' : n <= 10 ? `${n} مشاركين` : `${n} مشاركاً`);
+const countWord = (n, one, two, few, many) => (n === 1 ? one : n === 2 ? two : n <= 10 ? `${n} ${few}` : `${n} ${many}`);
 const today = () => new Date().toLocaleDateString('ar-KW', { year: 'numeric', month: 'long', day: 'numeric' });
 
 /* ---------- لون الكتاب من المادة، والشخصية لمن لم يلعب اللعبة ---------- */
@@ -248,7 +249,7 @@ function render() {
   view.replaceChildren(current.parts[0]);
   current.parts[0].setAttribute('aria-label', `الصورة الجماعية: ${people(items.length)}، كل واحد رافع كتابه وفيه اسم معلّمه وكلمته`);
   const pages = Math.ceil(rows.length / 2);
-  $('note').textContent = `${people(items.length)} في ${rows.length === 1 ? 'صف واحد' : `${rows.length} صفوف`}. ملف PDF: ${pages === 1 ? 'صفحة واحدة' : `${pages} صفحات`}.`
+  $('note').textContent = `${people(items.length)} في ${countWord(rows.length, 'صف واحد', 'صفّين', 'صفوف', 'صفاً')}. ملف PDF: ${countWord(pages, 'صفحة واحدة', 'صفحتين', 'صفحات', 'صفحة')}.`
     + (current.parts.length > 1 ? ` الصورة كبيرة فقُسّمت إلى ${current.parts.length} أجزاء.` : '');
   if (current.parts.length > 1) {
     parts.hidden = false;
